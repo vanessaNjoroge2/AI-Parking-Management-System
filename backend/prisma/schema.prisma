@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  DRIVER
+  OWNER
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  CHECKED_IN
+  COMPLETED
+  REFUNDED
+  EXPIRED
+}
+
+enum PaymentMethod {
+  MPESA
+  CARD
+}
+
+enum PaymentStatus {
+  INITIATED
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum PricingType {
+  HOURLY
+  DAILY
+  FLAT
+}
+
+model User {
+  id       String   @id @default(uuid())
+  fullName String
+  phone    String   @unique
+  email    String?  @unique
+  password String
+  lastLoginAt  DateTime?   // 👈 ADD THIS
+  role     UserRole @default(DRIVER)
+
+  // relations
+  parkingLots ParkingLot[] @relation("OwnerParkingLots")
+  bookings    Booking[]
+  reviews     Review[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ParkingLot {
+  id      String @id @default(uuid())
+  ownerId String
+  owner   User   @relation("OwnerParkingLots", fields: [ownerId], references: [id])
+
+  name        String
+  description String?
+  addressText String?
+
+  latitude  Decimal @db.Decimal(10, 7)
+  longitude Decimal @db.Decimal(10, 7)
+
+  capacityTotal Int
+  address String?
+  isActive      Boolean @default(true)
+  isCovered Boolean @default(false)
+
+  // feature flags
+  isGuarded          Boolean @default(false)
+  wheelchairFriendly Boolean @default(false)
+  hasCctv            Boolean @default(false)
+  hasLighting        Boolean @default(false)
+
+  // relations
+  photos       ParkingPhoto[]
+  pricingRules PricingRule[]
+  workingHours WorkingHour[]
+  bookings     Booking[]
+  reviews      Review[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([latitude, longitude])
+  @@index([ownerId])
+}
+
+model ParkingPhoto {
+  id           String     @id @default(uuid())
+  parkingLotId String
+  parkingLot   ParkingLot @relation(fields: [parkingLotId], references: [id])
+
+  url       String
+  isPrimary Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([parkingLotId])
+}
+
+model WorkingHour {
+  id           String     @id @default(uuid())
+  parkingLotId String
+  parkingLot   ParkingLot @relation(fields: [parkingLotId], references: [id])
+
+  // 0=Sunday ... 6=Saturday
+  dayOfWeek Int
+  opensAt   String // "08:00"
+  closesAt  String // "18:00"
+  isClosed  Boolean @default(false)
+
+  @@unique([parkingLotId, dayOfWeek])
+  @@index([parkingLotId])
+}
+
+model PricingRule {
+  id           String     @id @default(uuid())
+  parkingLotId String
+  parkingLot   ParkingLot @relation(fields: [parkingLotId], references: [id])
+
+  type     PricingType
+  amount   Int // store in cents? For KES you can store as integer KES if you prefer, but cents is safer
+  currency String      @default("KES")
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parkingLotId, isActive])
+}
+
+model Booking {
+  id           String @id @default(uuid())
+  userId       String
+  parkingLotId String
+
+  user       User       @relation(fields: [userId], references: [id])
+  parkingLot ParkingLot @relation(fields: [parkingLotId], references: [id])
+
+  startTime DateTime
+  endTime   DateTime
+
+  vehiclePlate String?
+  preference   String? // e.g. "covered", "near-exit" (keep flexible in MVP)
+  numberOfCars Int     @default(1)
+
+  status BookingStatus @default(PENDING)
+
+  payment Payment?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parkingLotId, startTime, endTime])
+  @@index([userId])
+}
+
+model Payment {
+  id        String  @id @default(uuid())
+  bookingId String  @unique
+  booking   Booking @relation(fields: [bookingId], references: [id])
+
+  method   PaymentMethod
+  amount   Int
+  currency String        @default("KES")
+
+  status PaymentStatus @default(INITIATED)
+
+  providerRef String? // Mpesa receipt number / transaction reference
+  phone       String? // for mpesa
+  rawPayload  Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id           String @id @default(uuid())
+  userId       String
+  parkingLotId String
+
+  user       User       @relation(fields: [userId], references: [id])
+  parkingLot ParkingLot @relation(fields: [parkingLotId], references: [id])
+
+  rating  Int
+  comment String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, parkingLotId])
+  @@index([parkingLotId])
+}
