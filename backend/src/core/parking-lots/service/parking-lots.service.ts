@@ -2,11 +2,12 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ParkingLotsRepository } from '../../../shared/database/repository/parking-lots/parking-lots.repository';
 import { CreateParkingLotDto } from '../dto/create-parking-lot.dto';
 import { UpdateParkingLotDto } from '../dto/update-parking-lot.dto';
-import { SetWorkingHoursDto } from '../dto/set-working-hours.dto';
+import { WorkingHourItemDto } from '../dto/set-working-hours.dto';
 import { SetPricingDto } from '../dto/set-pricing.dto';
 import { UserRole } from '@prisma/client';
 
@@ -45,15 +46,33 @@ export class ParkingLotsService {
   async setWorkingHours(
     owner: { userId: string; role: string },
     parkingLotId: string,
-    dto: SetWorkingHoursDto,
+    dto: WorkingHourItemDto[],
   ) {
+    if (!Array.isArray(dto) || dto.length === 0) {
+      throw new BadRequestException('Working hours must be a non-empty array');
+    }
+    for (const item of dto) {
+      if (!item.isClosed) {
+        if (!item.opensAt || !item.closesAt) {
+          throw new BadRequestException(
+            'Open days must have opening and closing times',
+          );
+        }
+
+        if (item.opensAt >= item.closesAt) {
+          throw new BadRequestException(
+            'Opening time must be before closing time',
+          );
+        }
+      }
+    }
     const lot = await this.repo.findById(parkingLotId);
     if (!lot) throw new NotFoundException('Parking lot not found');
 
     if (owner.role !== UserRole.ADMIN && lot.ownerId !== owner.userId) {
       throw new ForbiddenException('Not your parking lot');
     }
-    return this.repo.upsertWorkingHours(parkingLotId, dto.items);
+    return this.repo.upsertWorkingHours(parkingLotId, dto);
   }
 
   async setPricing(
