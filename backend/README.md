@@ -1,98 +1,135 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+📦 Getting Started
+## 📋 Prerequisites
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+- **Node.js** >= 18.0.0
+- **npm** >= 8.0.0
+- **Docker & Docker Compose** (for containerized development)
+- **PostgreSQL** >= 13 (if running locally)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🛠️ Installation & Setup
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+### 1. Clone the Repository
 
 ```bash
-$ npm install
+git clone https://github.com/vanessaNjoroge2/AI-Parking-Management-System.git
+cd backend
 ```
 
-## Compile and run the project
+
+### 2. Install Dependencies
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
+### 3. Environment Setup
+
+Create environment files:
+
+
+Create a .env file in the root directory:
+```
+DATABASE_URL="postgresql://Parking:your_secure_password@localhost:5432/Parking"
+JWT_SECRET="your_super_secret_key"
+PORT=3000
+```
+
+## Database
+
+### Option 2: Local PostgreSQL Installation
+
+1. Download(https://www.postgresql.org/download/) and Install PostgreSQL locally
+
+2. Create database (Open psql or pgAdmin and run:):
+   ```sql
+   CREATE DATABASE Parking;
+   CREATE USER Parking WITH PASSWORD 'your_secure_password';
+   GRANT ALL PRIVILEGES ON DATABASE Parking TO Parking;
+   ```
+
+### 3. Database Migrations
 
 ```bash
-# unit tests
-$ npm run test
+# Generate Prisma client
+npx prisma generate
 
-# e2e tests
-$ npm run test:e2e
+# Run database migrations
+npx prisma migrate dev --name init
 
-# test coverage
-$ npm run test:cov
+# Seed database (optional)
+npx prisma db seed
+
+# View database in Prisma Studio
+npx prisma studio
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Creating New Migrations
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# After schema changes
+npx prisma migrate dev --name describe_your_changes
+
+# Example
+npx prisma migrate dev --name add_booking_expiry
 ```
+## 🚀 Running the Application
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Option 1: Local Development (npm)
 
-## Resources
+```bash
+# Development mode with hot reload
+npm run start:dev
 
-Check out a few resources that may come in handy when working with NestJS:
+# Production mode
+npm run start:prod
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Debug mode
+npm run start:debug
+```
+#### Creating a Feature Branch
 
-## Support
+```bash
+# 1. Create and checkout feature branch
+git checkout -b booking
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# 2. Work on your changes
+# ... make changes ...
 
-## Stay in touch
+# 3. Stage your changes
+git add .
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# 4. Run quality checks
+npm run format:check && npm run lint
 
-## License
+# 5. Commit with proper format
+git commit -m "add patient registration endpoint"
+```
+#### Keeping Your Branch Updated
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+# 1. Fetch latest changes from remote
+git fetch origin
+
+# 2. Rebase your branch onto latest master
+git rebase origin/main
+
+# 3. If conflicts occur, resolve them and continue
+git add .
+git rebase --continue
+
+# 4. Force push your rebased branch (since history changed)
+git push --force-with-lease origin booking
+```
+#### Submitting Your Work
+
+```bash
+# 1. Ensure your branch is up to date
+git fetch origin
+git rebase origin/main
+
+# 2. Push your branch
+git push --force-with-lease origin booking
+
+# 3. Create Pull Request
+# 4. After PR approval, merge will be done via rebase
+```
