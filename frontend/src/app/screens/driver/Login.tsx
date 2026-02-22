@@ -1,17 +1,45 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ParkingCircle, Mail, Lock, User } from 'lucide-react';
+import { ParkingCircle, Mail, Lock, User, Phone } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { MobileFrame } from '../../components/MobileFrame';
+import { login, register } from '../../services/auth';
 
 export function Login() {
   const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/search');
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      if (isSignUp) {
+        await register({
+          fullName,
+          phone,
+          email: email || undefined,
+          password,
+          role: 'DRIVER',
+        });
+      } else {
+        await login({ phone, password });
+      }
+
+      navigate('/search');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to authenticate');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -42,18 +70,37 @@ export function Login() {
                   type="text"
                   placeholder="Full Name"
                   className="pl-12 h-14 bg-input-background rounded-2xl border-0"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
                 />
               </div>
             )}
-            
+
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
-                type="email"
-                placeholder="Email"
+                type="tel"
+                placeholder="Phone (e.g. 07XX XXX XXX)"
                 className="pl-12 h-14 bg-input-background rounded-2xl border-0"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
               />
             </div>
+
+            {isSignUp && (
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  type="email"
+                  placeholder="Email (optional)"
+                  className="pl-12 h-14 bg-input-background rounded-2xl border-0"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+            )}
 
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -61,6 +108,9 @@ export function Login() {
                 type="password"
                 placeholder="Password"
                 className="pl-12 h-14 bg-input-background rounded-2xl border-0"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
               />
             </div>
 
@@ -70,11 +120,16 @@ export function Login() {
               </button>
             )}
 
+            {error && (
+              <p className="text-sm text-destructive text-center">{error}</p>
+            )}
+
             <Button
               type="submit"
               className="h-14 rounded-2xl bg-primary text-white mt-4"
+              disabled={isSubmitting}
             >
-              {isSignUp ? 'Sign Up' : 'Sign In'}
+              {isSubmitting ? 'Please wait...' : isSignUp ? 'Sign Up' : 'Sign In'}
             </Button>
           </form>
 

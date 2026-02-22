@@ -4,12 +4,12 @@ import { ArrowLeft, Calendar, Car } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { TimePicker } from '../../components/TimePicker';
-import { ParkingLot } from '../../services/overpass';
+import { getPrimaryPricing, NormalizedParkingLot } from '../../services/parkingLots';
 
 export function BookingForm() {
   const navigate = useNavigate();
   const location = useLocation();
-  const lot = location.state?.lot as ParkingLot | undefined;
+  const lot = location.state?.lot as NormalizedParkingLot | undefined;
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [startTime, setStartTime] = useState('09:00');
@@ -17,7 +17,8 @@ export function BookingForm() {
   const [plate, setPlate] = useState('');
 
   // Rate Calculation (Mock logic based on ID if fee is not explicit "no")
-  const hourlyRate = lot?.fee === 'no' ? 0 : (lot?.id ? (lot.id % 100) + 50 : 50);
+  const pricing = lot ? getPrimaryPricing(lot) : { amount: 0, currency: 'KES', type: 'FLAT', isFree: true };
+  const hourlyRate = pricing.isFree ? 0 : pricing.amount;
 
   // Redirect if no data
   if (!lot) {
@@ -139,7 +140,9 @@ export function BookingForm() {
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Rate</span>
-                  <span className="font-medium">KES {hourlyRate} / hour</span>
+                  <span className="font-medium">
+                    {pricing.currency} {hourlyRate} / {pricing.type.toLowerCase()}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Duration</span>

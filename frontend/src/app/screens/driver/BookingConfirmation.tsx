@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router';
 import { CheckCircle, MapPin, Calendar, Clock, Car, Download, Share2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { StatusBadge } from '../../components/StatusBadge';
-import { ParkingLot } from '../../services/overpass';
+import { NormalizedParkingLot } from '../../services/parkingLots';
 
 interface BookingDetails {
   date: string;
@@ -17,7 +17,7 @@ interface BookingDetails {
 export function BookingConfirmation() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { lot, bookingDetails } = (location.state as { lot: ParkingLot; bookingDetails: BookingDetails }) || {};
+  const { lot, bookingDetails } = (location.state as { lot: NormalizedParkingLot; bookingDetails: BookingDetails }) || {};
 
   // Mock Booking ID
   const bookingId = `PKS-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;

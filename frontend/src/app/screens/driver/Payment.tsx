@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router';
 import { ArrowLeft, Smartphone, CreditCard, Wallet } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { ParkingLot } from '../../services/overpass';
+import { NormalizedParkingLot } from '../../services/parkingLots';
 
 interface BookingDetails {
   date: string;
@@ -17,7 +17,7 @@ interface BookingDetails {
 export function Payment() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { lot, bookingDetails } = (location.state as { lot: ParkingLot; bookingDetails: BookingDetails }) || {};
+  const { lot, bookingDetails } = (location.state as { lot: NormalizedParkingLot; bookingDetails: BookingDetails }) || {};
 
   const [paymentMethod, setPaymentMethod] = useState<'mpesa' | 'card' | 'wallet'>('mpesa');
   const [phoneNumber, setPhoneNumber] = useState('');

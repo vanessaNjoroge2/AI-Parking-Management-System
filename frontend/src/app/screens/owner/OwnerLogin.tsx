@@ -1,15 +1,34 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { ParkingCircle, Mail, Lock, ArrowLeft } from 'lucide-react';
+import { ParkingCircle, Lock, ArrowLeft, Phone } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { login } from '../../services/auth';
 
 export function OwnerLogin() {
   const navigate = useNavigate();
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate('/owner/dashboard');
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const response = await login({ phone, password });
+      if (response.user.role !== 'OWNER' && response.user.role !== 'ADMIN') {
+        setError('This account does not have owner access.');
+        return;
+      }
+      navigate('/owner/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to sign in');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -40,11 +59,14 @@ export function OwnerLogin() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 mb-6">
           <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
-              type="email"
-              placeholder="Email"
+              type="tel"
+              placeholder="Phone"
               className="pl-12 h-14 bg-input-background rounded-2xl border-0"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
             />
           </div>
 
@@ -54,6 +76,9 @@ export function OwnerLogin() {
               type="password"
               placeholder="Password"
               className="pl-12 h-14 bg-input-background rounded-2xl border-0"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </div>
 
@@ -61,11 +86,16 @@ export function OwnerLogin() {
             Forgot password?
           </button>
 
+          {error && (
+            <p className="text-sm text-destructive text-center">{error}</p>
+          )}
+
           <Button
             type="submit"
             className="h-14 rounded-2xl bg-primary text-white mt-4"
+            disabled={isSubmitting}
           >
-            Sign In
+            {isSubmitting ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
 

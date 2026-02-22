@@ -6,7 +6,7 @@ import { Button } from '../ui/button';
 import { StatusBadge } from '../StatusBadge';
 
 interface CustomMarkerProps {
-    id: number;
+    id: string;
     position: [number, number];
     title: string;
     price: number;
@@ -14,7 +14,7 @@ interface CustomMarkerProps {
     type?: string;
     access?: string;
     fee?: string;
-    onBook: (id: number) => void;
+    onBook: (id: string) => void;
 }
 
 export function CustomMarker({ id, position, title, price, status, type, access, fee, onBook }: CustomMarkerProps) {

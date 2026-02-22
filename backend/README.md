@@ -1,3 +1,73 @@
+# AI Parking Management System — Backend
+
+NestJS backend API for the AI Parking Management System.
+
+## Quick start
+
+```bash
+npm install
+npm run start:dev
+```
+
+By default the server listens on `${PORT:-3000}`.
+
+## Validation + authentication
+
+- Global request validation is enabled via Nest's `ValidationPipe` (see `src/main.ts`).
+- Some endpoints are protected with JWT via `JwtAuthGuard`.
+- JWT secret comes from `JWT_SECRET` (falls back to `dev_secret_change_me` for local development).
+
+## Routes
+
+This section documents the routes currently implemented by the controllers under `src/core/**/controller/*.controller.ts`.
+
+### Auth (`/auth`)
+
+| Method | Path | Auth? | Description |
+|---|---|---:|---|
+| POST | `/auth/register` | Public | Register a new user. |
+| POST | `/auth/login` | Public | Login and receive a JWT (and/or auth payload as implemented in the service). |
+
+Request bodies:
+
+- `POST /auth/register`: `RegisterDto` (`src/core/auth/dto/register.dto.ts`)
+- `POST /auth/login`: `LoginDto` (`src/core/auth/dto/login.dto.ts`)
+
+### Parking lots (`/parking-lots`)
+
+| Method | Path | Auth? | Description |
+|---|---|---:|---|
+| GET | `/parking-lots/search?lat=...&lng=...&radiusKm=...` | Public | Search parking lots near a coordinate. `radiusKm` defaults to `3`. |
+| GET | `/parking-lots/:id` | Public | Get details for a specific parking lot. |
+| GET | `/parking-lots/owner/mine` | JWT | Get parking lots owned by the current user. |
+| POST | `/parking-lots` | JWT | Create a new parking lot (owner). |
+| PATCH | `/parking-lots/:id` | JWT | Update a parking lot (owner). |
+| POST | `/parking-lots/:id/working-hours` | JWT | Set/update working hours for a parking lot. |
+| POST | `/parking-lots/:id/pricing` | JWT | Set/update pricing for a parking lot. |
+
+Notes:
+
+- Protected routes require `Authorization: Bearer <token>`.
+- Create/update DTOs live in `src/core/parking-lots/dto/`.
+
+### Bookings (`/bookings`)
+
+`BookingsController` is currently registered at `/bookings` but does not define any HTTP handlers yet.
+
+### Payments (`/payments`)
+
+`PaymentsController` is currently registered at `/payments` but does not define any HTTP handlers yet.
+
+### Users (`/users`)
+
+`UsersController` is currently registered at `/users` but does not define any HTTP handlers yet.
+
+## Tests
+
+```bash
+npm run test
+npm run test:e2e
+```
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>

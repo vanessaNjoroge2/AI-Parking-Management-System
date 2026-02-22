@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 
 export interface FilterState {
     radius: number; // in meters
-    types: string[]; // surface, multi-storey, underground
+    types: string[]; // surface, covered
     access: string[]; // public, customers, private
     fee: string[]; // yes, no
 }
@@ -72,8 +72,7 @@ export function FilterPanel({ filters, onFilterChange, onClose, className = '' }
                     <div className="space-y-3">
                         {[
                             { id: 'surface', label: 'Open / Surface' },
-                            { id: 'multi-storey', label: 'Multi-Storey' },
-                            { id: 'underground', label: 'Underground / Basement' },
+                            { id: 'covered', label: 'Covered Parking' },
                         ].map((item) => (
                             <div key={item.id} className="flex items-center space-x-2">
                                 <Checkbox

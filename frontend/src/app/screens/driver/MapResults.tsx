@@ -8,7 +8,13 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useMap } from 'react-leaflet';
-import { fetchParkingLots, ParkingLot } from '../../services/overpass';
+import {
+  getPrimaryPricing,
+  normalizeParkingLot,
+  ParkingLot,
+  NormalizedParkingLot,
+  searchParkingLots,
+} from '../../services/parkingLots';
 
 // Helper to center map
 function MapController({ center }: { center: [number, number] | null }) {
@@ -23,18 +29,19 @@ function MapController({ center }: { center: [number, number] | null }) {
 
 export function MapResults() {
   const navigate = useNavigate();
-  const [selectedLotId, setSelectedLotId] = useState<number | null>(null);
+  const [selectedLotId, setSelectedLotId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   // Default Center: Nairobi CBD (User Provided: 1.2896 S, 36.8151 E)
   const [mapCenter, setMapCenter] = useState<[number, number]>([-1.2896, 36.8151]);
 
   // Data State
-  const [allLots, setAllLots] = useState<ParkingLot[]>([]);
+  const [allLots, setAllLots] = useState<NormalizedParkingLot[]>([]);
 
   // Filter State
   const [filters, setFilters] = useState<FilterState>({
@@ -48,8 +55,17 @@ export function MapResults() {
   useEffect(() => {
     const loadParking = async () => {
       setIsLoadingData(true);
-      const lots = await fetchParkingLots(mapCenter[0], mapCenter[1], filters.radius);
-      setAllLots(lots);
+      setLoadError('');
+      try {
+        const lots = await searchParkingLots(mapCenter[0], mapCenter[1], filters.radius / 1000);
+        const normalized = lots
+          .map(normalizeParkingLot)
+          .filter((lot) => Number.isFinite(lot.lat) && Number.isFinite(lot.lng));
+        setAllLots(normalized);
+      } catch (error) {
+        setAllLots([]);
+        setLoadError(error instanceof Error ? error.message : 'Failed to load parking lots');
+      }
       setIsLoadingData(false);
     };
 
@@ -80,22 +96,29 @@ export function MapResults() {
   };
 
   // Filter Logic (Client-side)
+  const getLotType = (lot: ParkingLot) => (lot.isCovered ? 'covered' : 'surface');
+  const getLotAccess = (lot: ParkingLot) => (lot.isActive ? 'public' : 'private');
+  const getLotFee = (lot: ParkingLot) => (getPrimaryPricing(lot).isFree ? 'no' : 'yes');
+
   const visibleLots = useMemo(() => {
-    return allLots.filter(lot => {
+    return allLots.filter((lot) => {
       // 1. Type Filter
-      if (filters.types.length > 0 && !filters.types.includes(lot.type || 'surface')) return false;
+      const type = getLotType(lot);
+      if (filters.types.length > 0 && !filters.types.includes(type)) return false;
 
       // 2. Access Filter
-      if (filters.access.length > 0 && !filters.access.includes(lot.access || 'public')) return false;
+      const access = getLotAccess(lot);
+      if (filters.access.length > 0 && !filters.access.includes(access)) return false;
 
       // 3. Fee Filter
-      if (filters.fee.length > 0 && !filters.fee.includes(lot.fee || 'unknown')) return false;
+      const fee = getLotFee(lot);
+      if (filters.fee.length > 0 && !filters.fee.includes(fee)) return false;
 
       return true;
     });
   }, [filters, allLots]);
 
-  const handleBook = (id: number) => {
+  const handleBook = (id: string) => {
     const lot = allLots.find(l => l.id === id);
     if (lot) {
       navigate('/lot-details', { state: { lot } });
@@ -179,7 +202,7 @@ export function MapResults() {
 
           {!isLoadingData && visibleLots.length === 0 && (
             <div className="text-center py-10 text-muted-foreground">
-              <p>No parking found in this area.</p>
+              <p>{loadError || 'No parking found in this area.'}</p>
               <Button variant="link" onClick={() => navigate(0)}>
                 Reset
               </Button>
@@ -202,22 +225,22 @@ export function MapResults() {
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-semibold text-lg">{lot.name}</h3>
                 {/* Use Access as Status for now since functionality is limited */}
-                <StatusBadge status={lot.access === 'private' ? 'occupied' : 'available'} />
+                <StatusBadge status={lot.isActive ? 'available' : 'occupied'} />
               </div>
               <p className="text-sm text-muted-foreground mb-3 capitalize">
-                {lot.type?.replace('_', ' ') || 'Surface Parking'}
+                {getLotType(lot).replace('_', ' ') || 'Surface Parking'}
               </p>
 
               {/* Features Badge Row */}
               <div className="flex flex-wrap gap-1 mb-3">
-                {lot.fee && (
+                {getLotFee(lot) && (
                   <span className="text-[10px] uppercase font-bold bg-secondary text-secondary-foreground px-2 py-1 rounded-md">
-                    {lot.fee === 'no' ? 'Free' : 'Paid'}
+                    {getLotFee(lot) === 'no' ? 'Free' : 'Paid'}
                   </span>
                 )}
-                {lot.access && (
+                {getLotAccess(lot) && (
                   <span className="text-[10px] uppercase font-bold bg-secondary text-secondary-foreground px-2 py-1 rounded-md">
-                    {lot.access}
+                    {getLotAccess(lot)}
                   </span>
                 )}
               </div>
@@ -252,17 +275,23 @@ export function MapResults() {
           onBoundsChanged={() => { }}
         >
           <MapController center={mapCenter} />
-          {visibleLots.map((lot) => (
-            <CustomMarker
-              key={lot.id}
-              id={lot.id}
-              position={[lot.lat, lot.lng]}
-              title={lot.name}
-              price={lot.fee === 'no' ? 0 : 50} // Mock price for now
-              status={lot.access === 'private' ? 'occupied' : 'available'}
-              onBook={handleBook}
-            />
-          ))}
+          {visibleLots.map((lot) => {
+            const pricing = getPrimaryPricing(lot);
+            return (
+              <CustomMarker
+                key={lot.id}
+                id={lot.id}
+                position={[lot.lat, lot.lng]}
+                title={lot.name}
+                price={pricing.isFree ? 0 : pricing.amount}
+                status={lot.isActive ? 'available' : 'occupied'}
+                fee={pricing.isFree ? 'no' : 'yes'}
+                access={getLotAccess(lot)}
+                type={getLotType(lot)}
+                onBook={handleBook}
+              />
+            );
+          })}
         </MapComponent>
 
         {/* Loading Overlay Map */}

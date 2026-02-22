@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { ArrowLeft, Star, MapPin, Shield, Camera, Car, Zap, ChevronLeft, ChevronRight, Info, Clock, Ruler, Layers, Eye, Accessibility } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, Shield, Camera, Car, Zap, ChevronLeft, ChevronRight, Info, Eye, Accessibility } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { StatusBadge } from '../../components/StatusBadge';
-import { ParkingLot } from '../../services/overpass';
+import { getPrimaryPricing, NormalizedParkingLot } from '../../services/parkingLots';
 
 export function LotDetails() {
   const navigate = useNavigate();
   const location = useLocation();
-  const lot = location.state?.lot as ParkingLot | undefined;
+  const lot = location.state?.lot as NormalizedParkingLot | undefined;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Redirect if no data (e.g., direct access)
@@ -27,16 +27,15 @@ export function LotDetails() {
     'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&h=400&fit=crop',
   ];
 
+  const pricing = getPrimaryPricing(lot);
   const amenities = [
-    { icon: Car, label: lot.type?.replace('_', ' ') || 'Surface Parking' },
-    { icon: Shield, label: lot.access || 'Public Access' },
-    { icon: Zap, label: lot.fee === 'no' ? 'Free Parking' : 'Paid Parking' },
-    ...(lot.openingHours ? [{ icon: Clock, label: lot.openingHours }] : []),
-    ...(lot.maxHeight ? [{ icon: Ruler, label: `Max Height: ${lot.maxHeight}` }] : []),
-    ...(lot.surface ? [{ icon: Layers, label: `Surface: ${lot.surface}` }] : []),
-    ...(lot.supervised ? [{ icon: Eye, label: `Supervised: ${lot.supervised === 'yes' ? 'Yes' : 'No'}` }] : []),
-    ...(lot.disabledSpaces ? [{ icon: Accessibility, label: `Disabled Spaces: ${lot.disabledSpaces}` }] : []),
-    { icon: Info, label: lot.operator || 'Operator: Unknown' },
+    { icon: Car, label: lot.isCovered ? 'Covered Parking' : 'Open / Surface' },
+    { icon: Shield, label: lot.isGuarded ? 'Guarded' : 'Unguarded' },
+    { icon: Zap, label: pricing.isFree ? 'Free Parking' : 'Paid Parking' },
+    ...(lot.hasCctv ? [{ icon: Camera, label: 'CCTV Monitoring' }] : []),
+    ...(lot.hasLighting ? [{ icon: Eye, label: 'Well Lit' }] : []),
+    ...(lot.wheelchairFriendly ? [{ icon: Accessibility, label: 'Wheelchair Friendly' }] : []),
+    ...(lot.addressText ? [{ icon: Info, label: lot.addressText }] : []),
   ];
 
   const nextImage = () => {
@@ -138,7 +137,7 @@ export function LotDetails() {
               </div>
             </div>
 
-            <StatusBadge status={lot.access === 'private' ? 'occupied' : 'available'} />
+            <StatusBadge status={lot.isActive ? 'available' : 'occupied'} />
           </div>
 
           {/* Price */}
@@ -147,13 +146,13 @@ export function LotDetails() {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Price</p>
                 <p className="text-3xl font-bold text-primary">
-                  {lot.fee === 'no' ? 'Free' : `KES ${(lot.id % 100) + 50}`}
-                  <span className="text-lg font-normal text-muted-foreground">{lot.fee !== 'no' && '/entry'}</span>
+                  {pricing.isFree ? 'Free' : `${pricing.currency} ${pricing.amount}`}
+                    <span className="text-lg font-normal text-muted-foreground">{!pricing.isFree && `/${pricing.type.toLowerCase()}`}</span>
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground mb-1">Capacity</p>
-                <p className="text-xl font-semibold">{lot.capacity || 'N/A'}</p>
+                <p className="text-xl font-semibold">{lot.capacityTotal || 'N/A'}</p>
               </div>
             </div>
           </div>
@@ -189,11 +188,11 @@ export function LotDetails() {
 
           {/* Book Button */}
           <Button
-            onClick={() => navigate('/booking-form')}
+            onClick={() => navigate('/booking-form', { state: { lot } })}
             className="w-full h-14 rounded-2xl bg-primary text-white text-lg font-medium shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
-            disabled={lot.access === 'private'}
+            disabled={!lot.isActive}
           >
-            {lot.access === 'private' ? 'Private Access' : 'Book Now'}
+            {!lot.isActive ? 'Currently Unavailable' : 'Book Now'}
           </Button>
         </div>
       </div>
