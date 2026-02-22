@@ -1,73 +1,3 @@
-# AI Parking Management System — Backend
-
-NestJS backend API for the AI Parking Management System.
-
-## Quick start
-
-```bash
-npm install
-npm run start:dev
-```
-
-By default the server listens on `${PORT:-3000}`.
-
-## Validation + authentication
-
-- Global request validation is enabled via Nest's `ValidationPipe` (see `src/main.ts`).
-- Some endpoints are protected with JWT via `JwtAuthGuard`.
-- JWT secret comes from `JWT_SECRET` (falls back to `dev_secret_change_me` for local development).
-
-## Routes
-
-This section documents the routes currently implemented by the controllers under `src/core/**/controller/*.controller.ts`.
-
-### Auth (`/auth`)
-
-| Method | Path | Auth? | Description |
-|---|---|---:|---|
-| POST | `/auth/register` | Public | Register a new user. |
-| POST | `/auth/login` | Public | Login and receive a JWT (and/or auth payload as implemented in the service). |
-
-Request bodies:
-
-- `POST /auth/register`: `RegisterDto` (`src/core/auth/dto/register.dto.ts`)
-- `POST /auth/login`: `LoginDto` (`src/core/auth/dto/login.dto.ts`)
-
-### Parking lots (`/parking-lots`)
-
-| Method | Path | Auth? | Description |
-|---|---|---:|---|
-| GET | `/parking-lots/search?lat=...&lng=...&radiusKm=...` | Public | Search parking lots near a coordinate. `radiusKm` defaults to `3`. |
-| GET | `/parking-lots/:id` | Public | Get details for a specific parking lot. |
-| GET | `/parking-lots/owner/mine` | JWT | Get parking lots owned by the current user. |
-| POST | `/parking-lots` | JWT | Create a new parking lot (owner). |
-| PATCH | `/parking-lots/:id` | JWT | Update a parking lot (owner). |
-| POST | `/parking-lots/:id/working-hours` | JWT | Set/update working hours for a parking lot. |
-| POST | `/parking-lots/:id/pricing` | JWT | Set/update pricing for a parking lot. |
-
-Notes:
-
-- Protected routes require `Authorization: Bearer <token>`.
-- Create/update DTOs live in `src/core/parking-lots/dto/`.
-
-### Bookings (`/bookings`)
-
-`BookingsController` is currently registered at `/bookings` but does not define any HTTP handlers yet.
-
-### Payments (`/payments`)
-
-`PaymentsController` is currently registered at `/payments` but does not define any HTTP handlers yet.
-
-### Users (`/users`)
-
-`UsersController` is currently registered at `/users` but does not define any HTTP handlers yet.
-
-## Tests
-
-```bash
-npm run test
-npm run test:e2e
-```
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
@@ -98,71 +28,125 @@ npm run test:e2e
 ## Project setup
 
 ```bash
-$ npm install
+git clone https://github.com/vanessaNjoroge2/AI-Parking-Management-System.git
+cd backend
 ```
 
-## Compile and run the project
+
+### 2. Install Dependencies
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
+### 3. Environment Setup
+
+Create environment files:
+
+
+Create a .env file in the root directory:
+```
+DATABASE_URL="postgresql://Parking:your_secure_password@localhost:5432/Parking"
+JWT_SECRET="your_super_secret_key"
+PORT=3000
+```
+
+## Database
+
+### Option 2: Local PostgreSQL Installation
+
+1. Download(https://www.postgresql.org/download/) and Install PostgreSQL locally
+
+2. Create database (Open psql or pgAdmin and run:):
+   ```sql
+   CREATE DATABASE Parking;
+   CREATE USER Parking WITH PASSWORD 'your_secure_password';
+   GRANT ALL PRIVILEGES ON DATABASE Parking TO Parking;
+   ```
+
+### 3. Database Migrations
 
 ```bash
-# unit tests
-$ npm run test
+# Generate Prisma client
+npx prisma generate
 
-# e2e tests
-$ npm run test:e2e
+# Run database migrations
+npx prisma migrate dev --name init
 
-# test coverage
-$ npm run test:cov
+# Seed database (optional)
+npx prisma db seed
+
+# View database in Prisma Studio
+npx prisma studio
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Creating New Migrations
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# After schema changes
+npx prisma migrate dev --name describe_your_changes
+
+# Example
+npx prisma migrate dev --name add_booking_expiry
 ```
+## 🚀 Running the Application
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Option 1: Local Development (npm)
 
-## Resources
+```bash
+# Development mode with hot reload
+npm run start:dev
 
-Check out a few resources that may come in handy when working with NestJS:
+# Production mode
+npm run start:prod
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# Debug mode
+npm run start:debug
+```
+#### Creating a Feature Branch
 
-## Support
+```bash
+# 1. Create and checkout feature branch
+git checkout -b booking
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# 2. Work on your changes
+# ... make changes ...
 
-## Stay in touch
+# 3. Stage your changes
+git add .
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# 4. Run quality checks
+npm run format:check && npm run lint
 
-## License
+# 5. Commit with proper format
+git commit -m "add patient registration endpoint"
+```
+#### Keeping Your Branch Updated
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+# 1. Fetch latest changes from remote
+git fetch origin
+
+# 2. Rebase your branch onto latest master
+git rebase origin/main
+
+# 3. If conflicts occur, resolve them and continue
+git add .
+git rebase --continue
+
+# 4. Force push your rebased branch (since history changed)
+git push --force-with-lease origin booking
+```
+#### Submitting Your Work
+
+```bash
+# 1. Ensure your branch is up to date
+git fetch origin
+git rebase origin/main
+
+# 2. Push your branch
+git push --force-with-lease origin booking
+
+# 3. Create Pull Request
+# 4. After PR approval, merge will be done via rebase
+```
