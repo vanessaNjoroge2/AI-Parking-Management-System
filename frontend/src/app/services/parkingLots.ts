@@ -24,6 +24,13 @@ export interface WorkingHour {
   isClosed: boolean;
 }
 
+export interface WorkingHourItem {
+  dayOfWeek: number;
+  opensAt: string;
+  closesAt: string;
+  isClosed: boolean;
+}
+
 export interface ParkingLot {
   id: string;
   name: string;
@@ -46,6 +53,24 @@ export interface ParkingLot {
 export interface NormalizedParkingLot extends ParkingLot {
   lat: number;
   lng: number;
+}
+
+export interface CreateParkingLotPayload {
+  name: string;
+  description?: string;
+  addressText?: string;
+  latitude: number;
+  longitude: number;
+  capacityTotal: number;
+  isGuarded?: boolean;
+  wheelchairFriendly?: boolean;
+  hasCctv?: boolean;
+  hasLighting?: boolean;
+  isCovered?: boolean;
+}
+
+export interface UpdateParkingLotPayload extends Partial<CreateParkingLotPayload> {
+  isActive?: boolean;
 }
 
 export function normalizeParkingLot(lot: ParkingLot): NormalizedParkingLot {
@@ -78,4 +103,39 @@ export async function searchParkingLots(lat: number, lng: number, radiusKm: numb
 
 export async function getParkingLotDetails(id: string) {
   return apiFetch<ParkingLot>(`/parking-lots/${id}`);
+}
+
+export async function getOwnerParkingLots() {
+  return apiFetch<ParkingLot[]>('/parking-lots/owner/mine');
+}
+
+export async function createParkingLot(payload: CreateParkingLotPayload) {
+  return apiFetch<ParkingLot>('/parking-lots', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateParkingLot(id: string, payload: UpdateParkingLotPayload) {
+  return apiFetch<ParkingLot>(`/parking-lots/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function setParkingLotPricing(
+  id: string,
+  payload: { type: PricingType; amount: number; currency?: string },
+) {
+  return apiFetch<ParkingLot>(`/parking-lots/${id}/pricing`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function setParkingLotWorkingHours(id: string, items: WorkingHourItem[]) {
+  return apiFetch<ParkingLot>(`/parking-lots/${id}/working-hours`, {
+    method: 'POST',
+    body: JSON.stringify(items),
+  });
 }

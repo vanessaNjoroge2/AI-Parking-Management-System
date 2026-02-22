@@ -1,22 +1,68 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { ArrowLeft, Star, MapPin, Shield, Camera, Car, Zap, ChevronLeft, ChevronRight, Info, Eye, Accessibility } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { StatusBadge } from '../../components/StatusBadge';
-import { getPrimaryPricing, NormalizedParkingLot } from '../../services/parkingLots';
+import { getParkingLotDetails, getPrimaryPricing, normalizeParkingLot, NormalizedParkingLot } from '../../services/parkingLots';
 
 export function LotDetails() {
   const navigate = useNavigate();
   const location = useLocation();
-  const lot = location.state?.lot as NormalizedParkingLot | undefined;
+  const initialLot = location.state?.lot as NormalizedParkingLot | undefined;
+  const [lot, setLot] = useState<NormalizedParkingLot | undefined>(initialLot);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  const lotId = useMemo(() => {
+    if (initialLot?.id) return initialLot.id;
+    const params = new URLSearchParams(location.search);
+    return params.get('id') ?? undefined;
+  }, [initialLot?.id, location.search]);
+
+  useEffect(() => {
+    if (!lotId) return;
+    let isMounted = true;
+
+    const load = async () => {
+      setIsLoading(true);
+      setError('');
+      try {
+        const data = await getParkingLotDetails(lotId);
+        if (isMounted) {
+          setLot(normalizeParkingLot(data));
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Unable to load parking lot');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, [lotId]);
+
   // Redirect if no data (e.g., direct access)
+  if (!lot && !isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center flex-col gap-4">
+        <p className="text-muted-foreground">{error || 'No parking lot selected.'}</p>
+        <Button onClick={() => navigate('/map-results')}>Go to Map</Button>
+      </div>
+    );
+  }
+
   if (!lot) {
     return (
       <div className="min-h-screen flex items-center justify-center flex-col gap-4">
-        <p className="text-muted-foreground">No parking lot selected.</p>
-        <Button onClick={() => navigate('/map-results')}>Go to Map</Button>
+        <p className="text-muted-foreground">Loading parking lot details...</p>
       </div>
     );
   }

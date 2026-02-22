@@ -16,6 +16,7 @@ import { BookingForm } from './screens/driver/BookingForm';
 import { Payment } from './screens/driver/Payment';
 import { BookingConfirmation } from './screens/driver/BookingConfirmation';
 import { BookingHistory } from './screens/driver/BookingHistory';
+import { BookingDetails } from './screens/driver/BookingDetails';
 
 // Owner Screens
 import { OwnerLogin } from './screens/owner/OwnerLogin';
@@ -71,6 +72,10 @@ export const router = createBrowserRouter([
       {
         path: '/booking-history',
         Component: BookingHistory,
+      },
+      {
+        path: '/booking-details',
+        Component: BookingDetails,
       },
       {
         path: '/owner/login',

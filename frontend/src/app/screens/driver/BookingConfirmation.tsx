@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router';
 import { CheckCircle, MapPin, Calendar, Clock, Car, Download, Share2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { StatusBadge } from '../../components/StatusBadge';
+import type { BookingStatus } from '../../services/bookings';
 import { NormalizedParkingLot } from '../../services/parkingLots';
 
 interface BookingDetails {
@@ -17,10 +18,26 @@ interface BookingDetails {
 export function BookingConfirmation() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { lot, bookingDetails } = (location.state as { lot: NormalizedParkingLot; bookingDetails: BookingDetails }) || {};
+  const { lot, bookingDetails, bookingId, bookingStatus } =
+    (location.state as {
+      lot: NormalizedParkingLot;
+      bookingDetails: BookingDetails;
+      bookingId?: string;
+      bookingStatus?: BookingStatus;
+    }) || {};
 
   // Mock Booking ID
-  const bookingId = `PKS-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+  const displayBookingId = bookingId
+    ? `PKS-${bookingId.slice(0, 8).toUpperCase()}`
+    : `PKS-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+
+  const badgeStatus = bookingStatus
+    ? bookingStatus === 'CONFIRMED' || bookingStatus === 'COMPLETED'
+      ? 'confirmed'
+      : bookingStatus === 'CANCELLED' || bookingStatus === 'REFUNDED' || bookingStatus === 'EXPIRED'
+      ? 'cancelled'
+      : 'pending'
+    : 'confirmed';
 
   // Redirect if missing data
   if (!lot || !bookingDetails) {
@@ -79,11 +96,11 @@ export function BookingConfirmation() {
               <div className="flex-1 w-full space-y-4">
                 <div className="bg-secondary/50 rounded-2xl p-4 text-center border border-border/50">
                   <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Booking Code</p>
-                  <p className="text-3xl font-mono font-bold tracking-widest text-primary">{bookingId}</p>
+                  <p className="text-3xl font-mono font-bold tracking-widest text-primary">{displayBookingId}</p>
                 </div>
 
                 <div className="flex justify-center">
-                  <StatusBadge status="confirmed" />
+                  <StatusBadge status={badgeStatus} />
                 </div>
               </div>
             </div>

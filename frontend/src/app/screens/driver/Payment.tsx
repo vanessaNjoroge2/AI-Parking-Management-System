@@ -4,6 +4,7 @@ import { ArrowLeft, Smartphone, CreditCard, Wallet } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { NormalizedParkingLot } from '../../services/parkingLots';
+import { createBooking } from '../../services/bookings';
 
 interface BookingDetails {
   date: string;
@@ -21,6 +22,8 @@ export function Payment() {
 
   const [paymentMethod, setPaymentMethod] = useState<'mpesa' | 'card' | 'wallet'>('mpesa');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   // Redirect if missing data
   if (!lot || !bookingDetails) {
@@ -32,18 +35,41 @@ export function Payment() {
     );
   }
 
-  const handlePayment = (e: React.FormEvent) => {
+  const toIsoDateTime = (date: string, time: string) => {
+    const [year, month, day] = date.split('-').map(Number);
+    const [hour, minute] = time.split(':').map(Number);
+    const value = new Date(year, (month ?? 1) - 1, day ?? 1, hour ?? 0, minute ?? 0);
+    return value.toISOString();
+  };
+
+  const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate API call
-    setTimeout(() => {
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      const booking = await createBooking({
+        parkingLotId: lot.id,
+        startTime: toIsoDateTime(bookingDetails.date, bookingDetails.startTime),
+        endTime: toIsoDateTime(bookingDetails.date, bookingDetails.endTime),
+        vehiclePlate: bookingDetails.plate,
+        numberOfCars: 1,
+      });
+
       navigate('/booking-confirmation', {
         state: {
           lot,
           bookingDetails,
-          paymentMethod
-        }
+          bookingId: booking.id,
+          bookingStatus: booking.status,
+          paymentMethod,
+        },
       });
-    }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Payment failed');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -193,12 +219,20 @@ export function Payment() {
                 </div>
               </div>
 
+              {error && (
+                <p className="text-sm text-destructive text-center">{error}</p>
+              )}
+
               <Button
                 type="submit"
                 className="w-full h-14 rounded-2xl bg-accent text-white hover:bg-accent/90 text-lg font-medium shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
-                disabled={paymentMethod === 'mpesa' && !phoneNumber}
+                disabled={(paymentMethod === 'mpesa' && !phoneNumber) || isSubmitting}
               >
-                {paymentMethod === 'mpesa' ? 'Pay with M-Pesa' : 'Confirm Payment'}
+                {isSubmitting
+                  ? 'Processing...'
+                  : paymentMethod === 'mpesa'
+                  ? 'Pay with M-Pesa'
+                  : 'Confirm Payment'}
               </Button>
 
               <p className="text-center text-xs text-muted-foreground mt-4">
