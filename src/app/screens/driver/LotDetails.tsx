@@ -189,7 +189,7 @@ export function LotDetails() {
 
           {/* Book Button */}
           <Button
-            onClick={() => navigate('/booking-form')}
+            onClick={() => navigate('/booking-form', { state: { lot } })}
             className="w-full h-14 rounded-2xl bg-primary text-white text-lg font-medium shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
             disabled={lot.access === 'private'}
           >

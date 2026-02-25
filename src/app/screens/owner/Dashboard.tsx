@@ -80,7 +80,7 @@ export function Dashboard() {
               {parkingLots.map((lot) => (
                 <button
                   key={lot.id}
-                  onClick={() => navigate('/owner/edit-lot')}
+                  onClick={() => navigate('/owner/edit-lot', { state: { lot } })}
                   className="bg-white rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all border border-border/50 text-left group"
                 >
                   <div className="flex justify-between items-start mb-4">
