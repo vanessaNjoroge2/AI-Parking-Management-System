@@ -122,6 +122,73 @@ async function main() {
         isGuarded: true,
       },
     }),
+    // ===== NAIROBI AREA =====
+    prisma.parkingLot.create({
+      data: {
+        name: 'Nairobi CBD Secure Parking',
+        ownerId: owner1.id,
+        latitude: -1.2905,
+        longitude: 36.8215,
+        capacityTotal: 10,
+        isGuarded: true,
+        hasCctv: true,
+        hasLighting: true,
+      },
+    }),
+    prisma.parkingLot.create({
+      data: {
+        name: 'Upper Hill Executive Parking',
+        ownerId: owner1.id,
+        latitude: -1.3,
+        longitude: 36.812,
+        capacityTotal: 8,
+        isGuarded: true,
+        hasCctv: true,
+      },
+    }),
+    prisma.parkingLot.create({
+      data: {
+        name: 'Parklands Secure Lot',
+        ownerId: owner2.id,
+        latitude: -1.27,
+        longitude: 36.83,
+        capacityTotal: 6,
+        hasLighting: true,
+      },
+    }),
+
+    // ===== THIKA AREA =====
+    prisma.parkingLot.create({
+      data: {
+        name: 'Thika Town Parking',
+        ownerId: owner2.id,
+        latitude: -1.05,
+        longitude: 37.06,
+        capacityTotal: 7,
+        isGuarded: true,
+      },
+    }),
+    prisma.parkingLot.create({
+      data: {
+        name: 'Blue Post Parking Lot',
+        ownerId: owner1.id,
+        latitude: -1.04,
+        longitude: 37.07,
+        capacityTotal: 5,
+        hasCctv: true,
+      },
+    }),
+    prisma.parkingLot.create({
+      data: {
+        name: 'Makongeni Secure Parking',
+        ownerId: owner2.id,
+        latitude: -1.0335,
+        longitude: 37.065,
+        capacityTotal: 4,
+        isGuarded: true,
+        hasLighting: true,
+      },
+    }),
   ]);
 
   console.log('✅ Parking lots created');
