@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { ParkingCircle, Mail, Lock, User, Phone } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { MobileFrame } from '../../components/MobileFrame';
 import { login, register } from '../../services/auth';
+import { getStoredAuth } from '../../services/authStorage';
+
 
 export function Login() {
   const navigate = useNavigate();
@@ -16,8 +18,41 @@ export function Login() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  React.useEffect(() => {
+    if (getStoredAuth()) {
+      navigate('/search');
+    }
+  }, [navigate]);
+
+  const validateInputs = () => {
+    if (isSignUp && !fullName.trim()) {
+      setError('Full name is required');
+      return false;
+    }
+    if (!phone.trim()) {
+      setError('Phone number is required');
+      return false;
+    }
+    const phoneRegex = /^(?:254|\+254|0)?(7|1)\d{8}$/;
+    if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
+      setError('Please enter a valid Kenyan phone number (e.g. 07XXXXXXXX)');
+      return false;
+    }
+    if (isSignUp && email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Please enter a valid email address');
+      return false;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateInputs()) return;
+
     setError('');
     setIsSubmitting(true);
 
@@ -41,6 +76,7 @@ export function Login() {
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <MobileFrame>

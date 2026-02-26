@@ -5,7 +5,17 @@ import { Button } from '../../components/ui/button';
 import { StatusBadge } from '../../components/StatusBadge';
 import { getParkingLotDetails, getPrimaryPricing, normalizeParkingLot, NormalizedParkingLot } from '../../services/parkingLots';
 
+import { getApiBaseUrl } from '../../services/apiClient';
+
+// Helper to fix image URLs
+const getImageUrl = (url?: string) => {
+  if (!url) return 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&q=80&w=800';
+  if (url.startsWith('http')) return url;
+  return `${getApiBaseUrl()}${url}`;
+};
+
 export function LotDetails() {
+
   const navigate = useNavigate();
   const location = useLocation();
   const initialLot = location.state?.lot as NormalizedParkingLot | undefined;
@@ -67,11 +77,17 @@ export function LotDetails() {
     );
   }
 
-  const images = [
-    'https://images.unsplash.com/photo-1590674899484-d5640e854abe?w=800&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=800&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&h=400&fit=crop',
-  ];
+  const images = useMemo(() => {
+    if (lot.photos && lot.photos.length > 0) {
+      return lot.photos.map(p => getImageUrl(p.url));
+    }
+    return [
+      'https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&q=80&w=800',
+      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=800',
+    ];
+  }, [lot.photos]);
+
 
   const pricing = getPrimaryPricing(lot);
   const amenities = [
@@ -193,7 +209,7 @@ export function LotDetails() {
                 <p className="text-sm text-muted-foreground mb-1">Price</p>
                 <p className="text-3xl font-bold text-primary">
                   {pricing.isFree ? 'Free' : `${pricing.currency} ${pricing.amount}`}
-                    <span className="text-lg font-normal text-muted-foreground">{!pricing.isFree && `/${pricing.type.toLowerCase()}`}</span>
+                  <span className="text-lg font-normal text-muted-foreground">{!pricing.isFree && `/${pricing.type.toLowerCase()}`}</span>
                 </p>
               </div>
               <div className="text-right">

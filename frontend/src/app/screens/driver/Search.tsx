@@ -1,24 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Search as SearchIcon, MapPin, Calendar, Clock, SlidersHorizontal, History } from 'lucide-react';
+import { Search as SearchIcon, MapPin, Calendar, Clock, SlidersHorizontal, History, ArrowUpDown } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { Calendar as CalendarComponent } from '../../components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
+import { format } from 'date-fns';
+import { fetchMyBookings, BookingRecord } from '../../services/bookings';
 
 export function Search() {
   const navigate = useNavigate();
   const [destination, setDestination] = useState('');
+  const [date, setDate] = useState<Date>(new Date());
+  const [time, setTime] = useState(format(new Date(), 'HH:mm'));
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  const recentSearches = [
-    'Downtown Plaza',
-    'City Mall',
-    'Airport Terminal 2',
-  ];
+  useEffect(() => {
+    const loadRecentSearches = async () => {
+      setIsLoadingHistory(true);
+      try {
+        const bookings = await fetchMyBookings();
+        // Extract unique parking lot names from bookings
+        const names = Array.from(new Set(bookings
+          .map(b => b.parkingLot?.name)
+          .filter(Boolean))) as string[];
+        setRecentSearches(names.slice(0, 3));
+      } catch (error) {
+        console.error('Failed to load recent searches:', error);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+    loadRecentSearches();
+  }, []);
 
   const handleSearch = () => {
     if (destination) {
-      navigate('/map-results');
+      navigate('/map-results', { state: { destination, date: date.toISOString(), time } });
     }
   };
+
+  const handleNow = () => {
+    setTime(format(new Date(), 'HH:mm'));
+  };
+
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -41,28 +67,60 @@ export function Search() {
                 onChange={(e) => setDestination(e.target.value)}
                 className="pl-12 pr-12 h-14 bg-secondary rounded-2xl border-0"
               />
-              <button className="absolute right-4 top-1/2 -translate-y-1/2">
-                <SearchIcon className="w-5 h-5 text-muted-foreground" />
-              </button>
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <button
+                  onClick={() => setDestination('')}
+                  className="p-2 hover:bg-white/50 rounded-full transition-colors"
+                  title="Reverse/Clear"
+                >
+                  <ArrowUpDown className="w-5 h-5 text-muted-foreground" />
+                </button>
+                <button className="p-2">
+                  <SearchIcon className="w-5 h-5 text-primary" />
+                </button>
+              </div>
             </div>
 
             {/* Date & Time */}
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="flex items-center gap-2 px-4 py-3 bg-secondary rounded-2xl">
-                <Calendar className="w-5 h-5 text-primary" />
-                <span className="text-sm">Today</span>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-3 bg-secondary rounded-2xl">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="flex items-center gap-2 px-4 py-3 bg-secondary rounded-2xl hover:bg-secondary/80 transition-colors text-left">
+                    <Calendar className="w-5 h-5 text-primary" />
+                    <span className="text-sm font-medium">{format(date, 'MMM dd, yyyy')}</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 rounded-3xl overflow-hidden" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={date}
+                    onSelect={(d) => d && setDate(d)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <button
+                onClick={handleNow}
+                className="flex items-center gap-2 px-4 py-3 bg-secondary rounded-2xl hover:bg-secondary/80 transition-colors text-left"
+              >
                 <Clock className="w-5 h-5 text-primary" />
-                <span className="text-sm">Now</span>
-              </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-muted-foreground leading-none">Now</span>
+                  <span className="text-sm font-medium">{time}</span>
+                </div>
+              </button>
             </div>
 
             {/* Filters */}
-            <button className="w-full flex items-center justify-center gap-2 py-3 border-2 border-border rounded-2xl hover:bg-secondary transition-colors mb-6">
+            <button
+              onClick={() => navigate('/map-results', { state: { showFilters: true } })}
+              className="w-full flex items-center justify-center gap-2 py-3 border-2 border-border rounded-2xl hover:bg-secondary transition-colors mb-6"
+            >
               <SlidersHorizontal className="w-5 h-5 text-primary" />
-              <span>Filters</span>
+              <span className="font-medium">Filters</span>
             </button>
+
 
             <Button
               onClick={handleSearch}

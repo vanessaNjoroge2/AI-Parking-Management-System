@@ -17,6 +17,8 @@ import { Payment } from './screens/driver/Payment';
 import { BookingConfirmation } from './screens/driver/BookingConfirmation';
 import { BookingHistory } from './screens/driver/BookingHistory';
 import { BookingDetails } from './screens/driver/BookingDetails';
+import { Profile } from './screens/driver/Profile';
+
 
 // Owner Screens
 import { OwnerLogin } from './screens/owner/OwnerLogin';
@@ -26,8 +28,11 @@ import { TodaysBookings } from './screens/owner/TodaysBookings';
 import { CheckInOut } from './screens/owner/CheckInOut';
 import { Analytics } from './screens/owner/Analytics';
 
-// Design System
-import { DesignSystem } from './screens/DesignSystem';
+
+
+import { ProtectedRoute } from './components/ProtectedRoute';
+
+
 
 export const router = createBrowserRouter([
   {
@@ -78,13 +83,27 @@ export const router = createBrowserRouter([
         Component: BookingDetails,
       },
       {
+        path: '/profile',
+        element: (
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        ),
+      },
+
+      {
         path: '/owner/login',
         Component: OwnerLogin,
       },
       {
         path: '/owner/dashboard',
-        Component: Dashboard,
+        element: (
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+            <Dashboard />
+          </ProtectedRoute>
+        ),
       },
+
       {
         path: '/owner/add-lot',
         Component: AddEditLot,
@@ -104,10 +123,6 @@ export const router = createBrowserRouter([
       {
         path: '/owner/analytics',
         Component: Analytics,
-      },
-      {
-        path: '/design-system',
-        Component: DesignSystem,
       },
     ],
   },
