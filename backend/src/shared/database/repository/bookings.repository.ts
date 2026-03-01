@@ -76,4 +76,41 @@ export class BookingsRepository {
       },
     });
   }
+  findBookingById(id: string) {
+    return this.db.booking.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, fullName: true, phone: true } },
+        parkingLot: { select: { id: true, name: true, ownerId: true } },
+        payment: true,
+      },
+    });
+  }
+
+  findOwnerBookings(ownerId: string, start: Date, end: Date) {
+    return this.db.booking.findMany({
+      where: {
+        parkingLot: { ownerId },
+        startTime: { lt: end },
+        endTime: { gt: start },
+      },
+      orderBy: { startTime: 'asc' },
+      include: {
+        user: { select: { id: true, fullName: true, phone: true } },
+        parkingLot: { select: { id: true, name: true, addressText: true } },
+        payment: true,
+      },
+    });
+  }
+  updateBookingStatus(id: string, status: BookingStatus) {
+    return this.db.booking.update({
+      where: { id },
+      data: { status },
+      include: {
+        user: { select: { id: true, fullName: true, phone: true } },
+        parkingLot: { select: { id: true, name: true, addressText: true } },
+        payment: true,
+      },
+    });
+  }
 }

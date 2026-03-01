@@ -2,9 +2,11 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { BookingsRepository } from '../../../shared/database/repository/bookings.repository';
 import { CreateBookingDto } from '../dto/create-booking.dto';
+import { BookingStatus, UserRole } from '@prisma/client';
 
 @Injectable()
 export class BookingsService {
@@ -73,5 +75,64 @@ export class BookingsService {
 
   myBookings(user: { userId: string }) {
     return this.repo.findMyBookings(user.userId);
+  }
+  async ownerBookings(user: { userId: string; role: string }, date?: string) {
+    if (user.role !== UserRole.OWNER && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Only owners can view owner bookings');
+    }
+
+    // Default: today
+    const d = date ? new Date(date) : new Date();
+    if (isNaN(d.getTime())) throw new BadRequestException('Invalid date');
+
+    const start = new Date(d);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(d);
+    end.setHours(23, 59, 59, 999);
+
+    return this.repo.findOwnerBookings(user.userId, start, end);
+  }
+
+  async checkIn(user: { userId: string; role: string }, bookingId: string) {
+    const booking = await this.repo.findBookingById(bookingId);
+    if (!booking) throw new NotFoundException('Booking not found');
+
+    // owner authorization
+    if (
+      user.role !== UserRole.ADMIN &&
+      booking.parkingLot.ownerId !== user.userId
+    ) {
+      throw new ForbiddenException('Not your parking lot booking');
+    }
+
+    // status rules
+    if (booking.status !== BookingStatus.CONFIRMED) {
+      throw new BadRequestException(
+        'Only CONFIRMED bookings can be checked-in',
+      );
+    }
+
+    return this.repo.updateBookingStatus(bookingId, BookingStatus.CHECKED_IN);
+  }
+
+  async checkOut(user: { userId: string; role: string }, bookingId: string) {
+    const booking = await this.repo.findBookingById(bookingId);
+    if (!booking) throw new NotFoundException('Booking not found');
+
+    if (
+      user.role !== UserRole.ADMIN &&
+      booking.parkingLot.ownerId !== user.userId
+    ) {
+      throw new ForbiddenException('Not your parking lot booking');
+    }
+
+    if (booking.status !== BookingStatus.CHECKED_IN) {
+      throw new BadRequestException(
+        'Only CHECKED_IN bookings can be checked-out',
+      );
+    }
+
+    return this.repo.updateBookingStatus(bookingId, BookingStatus.COMPLETED);
   }
 }
