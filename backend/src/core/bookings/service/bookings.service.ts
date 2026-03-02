@@ -4,7 +4,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import { BookingsRepository } from '../../../shared/database/repository/bookings.repository';
+import { BookingsRepository } from '../../../shared/database/repository/bookings/bookings.repository';
 import { CreateBookingDto } from '../dto/create-booking.dto';
 import { BookingStatus, UserRole } from '@prisma/client';
 
@@ -72,6 +72,12 @@ export class BookingsService {
       numberOfCars,
     });
   }
+  // async confirmBooking(bookingId: string) {
+  //   return this.db.booking.update({
+  //     where: { id: bookingId },
+  //     data: { status: BookingStatus.CONFIRMED },
+  //   });
+  // }
 
   myBookings(user: { userId: string }) {
     return this.repo.findMyBookings(user.userId);

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { BookingsRepository } from '../../../shared/database/repository/bookings.repository';
+import { BookingsRepository } from '../../../shared/database/repository/bookings/bookings.repository';
 
 @Injectable()
 export class BookingCleanupService {
