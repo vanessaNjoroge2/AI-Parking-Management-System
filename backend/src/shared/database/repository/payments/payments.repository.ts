@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../service/database.service';
-import { BookingStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
+import { BookingStatus, PaymentStatus, PaymentMethod } from '@prisma/client';
+import type { Booking, Payment, ParkingLot } from '@prisma/client';
 
 @Injectable()
 export class PaymentsRepository {
   constructor(private readonly db: DatabaseService) {}
 
+  // ✅ correctly typed booking with nested payment and parkingLot
   findBooking(id: string) {
     return this.db.booking.findUnique({
       where: { id },
@@ -13,7 +15,13 @@ export class PaymentsRepository {
         payment: true,
         parkingLot: { select: { id: true, ownerId: true } },
       },
-    });
+    }) as Promise<
+      | (Booking & {
+          payment: Payment | null;
+          parkingLot: { id: string; ownerId: string };
+        })
+      | null
+    >;
   }
 
   createPayment(data: {
@@ -36,8 +44,10 @@ export class PaymentsRepository {
   findPayment(id: string) {
     return this.db.payment.findUnique({
       where: { id },
-      include: { booking: true },
-    });
+      include: { booking: { include: { parkingLot: true } } },
+    }) as Promise<
+      (Payment & { booking: Booking & { parkingLot: ParkingLot } }) | null
+    >;
   }
 
   async markSuccess(paymentId: string, providerRef?: string) {
@@ -66,5 +76,63 @@ export class PaymentsRepository {
       data: { status: PaymentStatus.FAILED },
       include: { booking: true },
     });
+  }
+
+  getPaymentById(id: string) {
+    return this.db.payment.findUnique({
+      where: { id },
+      include: {
+        booking: {
+          include: {
+            parkingLot: {
+              select: {
+                id: true,
+                name: true,
+                ownerId: true,
+                addressText: true,
+              },
+            },
+            user: { select: { id: true, fullName: true, phone: true } },
+          },
+        },
+      },
+    }) as Promise<
+      | (Payment & {
+          booking: Booking & {
+            parkingLot: {
+              id: string;
+              name: string;
+              ownerId: string;
+              addressText: string | null;
+            };
+            user: { id: string; fullName: string; phone: string };
+          };
+        })
+      | null
+    >;
+  }
+
+  listPayments(where: any, take = 50, skip = 0) {
+    return this.db.payment.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take,
+      skip,
+      include: {
+        booking: {
+          include: {
+            parkingLot: { select: { id: true, name: true, ownerId: true } },
+            user: { select: { id: true, fullName: true, phone: true } },
+          },
+        },
+      },
+    }) as Promise<
+      (Payment & {
+        booking: Booking & {
+          parkingLot: { id: string; name: string; ownerId: string };
+          user: { id: string; fullName: string; phone: string };
+        };
+      })[]
+    >;
   }
 }

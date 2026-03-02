@@ -1,4 +1,13 @@
-import { Body, Controller, Param, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Param,
+  Post,
+  Get,
+  Req,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../../shared/guards/jwt/jwt-auth.guard';
 import type { AuthRequest } from '../../../shared/interfaces/authrequest.interface';
 import { PaymentsService } from '../../../core/payments/service/payments.service';
@@ -27,5 +36,15 @@ export class PaymentsController {
   @Post(':id/simulate-fail')
   simulateFail(@Req() req: AuthRequest, @Param('id') id: string) {
     return this.service.simulateFail(req.user, id);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Get(':id')
+  getOne(@Req() req: AuthRequest, @Param('id') id: string) {
+    return this.service.getOne(req.user, id);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  list(@Req() req: AuthRequest, @Query() q: any) {
+    return this.service.list(req.user, q);
   }
 }
