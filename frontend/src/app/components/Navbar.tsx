@@ -14,12 +14,12 @@ export function Navbar() {
     };
 
     return (
-        <nav className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-border z-[1000] flex items-center justify-between px-6">
-            <Link to="/" className="flex items-center gap-2">
-                <div className="bg-primary p-1.5 rounded-lg">
+        <nav className="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-[1000] flex items-center justify-between px-6">
+            <Link to="/" className="flex items-center gap-2 group">
+                <div className="bg-slate-900 p-1.5 rounded-md transition-transform group-hover:scale-105">
                     <ParkingCircle className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-bold text-primary">ParkSmart</span>
+                <span className="text-xl font-semibold tracking-tight text-foreground">ParkSmart</span>
             </Link>
 
             <div className="flex items-center gap-4">

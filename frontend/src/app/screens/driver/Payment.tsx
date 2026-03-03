@@ -83,37 +83,37 @@ export function Payment() {
               <button
                 type="button"
                 onClick={() => navigate('/booking-form', { state: { lot } })}
-                className="p-2 hover:bg-secondary rounded-xl transition-colors"
+                className="p-2 hover:bg-slate-100 rounded-md transition-colors border border-slate-200"
               >
-                <ArrowLeft className="w-5 h-5 text-primary" />
+                <ArrowLeft className="w-5 h-5 text-slate-600" />
               </button>
-              <div>
-                <h2 className="text-3xl font-bold tracking-tight text-primary">Payment</h2>
-                <p className="text-muted-foreground">Complete your booking for {lot.name}</p>
+              <div className="text-left">
+                <h2 className="text-3xl font-semibold tracking-tight text-slate-900">Secure Payment</h2>
+                <p className="text-slate-500">Processing booking for {lot.name}</p>
               </div>
             </div>
 
-            <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-border/50">
-              <h3 className="text-xl font-semibold mb-6">Select Payment Method</h3>
+            <div className="bg-white p-6 md:p-8 rounded-lg shadow-sm border border-slate-200 text-left">
+              <h3 className="text-xl font-semibold mb-6 text-slate-900 border-b border-slate-100 pb-2">Select Payment Method</h3>
               <div className="flex flex-col gap-4">
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('mpesa')}
-                  className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all hover:shadow-md ${paymentMethod === 'mpesa'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border bg-white'
+                  className={`flex items-center gap-4 p-4 rounded-md border-2 transition-all ${paymentMethod === 'mpesa'
+                    ? 'border-blue-600 bg-blue-50/50'
+                    : 'border-slate-100 bg-white hover:border-slate-200'
                     }`}
                 >
-                  <div className="p-3 bg-accent/10 rounded-xl">
-                    <Smartphone className="w-6 h-6 text-accent" />
+                  <div className="p-3 bg-emerald-50 rounded-md border border-emerald-100">
+                    <Smartphone className="w-6 h-6 text-emerald-600" />
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="font-medium">M-Pesa</p>
-                    <p className="text-sm text-muted-foreground">Pay via mobile money</p>
+                    <p className="font-semibold text-slate-900">M-Pesa Express</p>
+                    <p className="text-xs text-slate-500">Direct mobile STK push</p>
                   </div>
                   <div className={`w-5 h-5 rounded-full border-2 ${paymentMethod === 'mpesa'
-                    ? 'border-primary bg-primary'
-                    : 'border-muted-foreground'
+                    ? 'border-blue-600 bg-blue-600'
+                    : 'border-slate-300'
                     }`}>
                     {paymentMethod === 'mpesa' && (
                       <div className="w-full h-full rounded-full bg-white scale-50" />
@@ -124,21 +124,21 @@ export function Payment() {
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('card')}
-                  className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all hover:shadow-md ${paymentMethod === 'card'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border bg-white'
+                  className={`flex items-center gap-4 p-4 rounded-md border-2 transition-all ${paymentMethod === 'card'
+                    ? 'border-blue-600 bg-blue-50/50'
+                    : 'border-slate-100 bg-white hover:border-slate-200'
                     }`}
                 >
-                  <div className="p-3 bg-primary/10 rounded-xl">
-                    <CreditCard className="w-6 h-6 text-primary" />
+                  <div className="p-3 bg-blue-50 rounded-md border border-blue-100">
+                    <CreditCard className="w-6 h-6 text-blue-600" />
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="font-medium">Credit/Debit Card</p>
-                    <p className="text-sm text-muted-foreground">Visa, Mastercard</p>
+                    <p className="font-semibold text-slate-900">Debit / Credit Card</p>
+                    <p className="text-xs text-slate-500">Secure Visa/Mastercard processing</p>
                   </div>
                   <div className={`w-5 h-5 rounded-full border-2 ${paymentMethod === 'card'
-                    ? 'border-primary bg-primary'
-                    : 'border-muted-foreground'
+                    ? 'border-blue-600 bg-blue-600'
+                    : 'border-slate-300'
                     }`}>
                     {paymentMethod === 'card' && (
                       <div className="w-full h-full rounded-full bg-white scale-50" />
@@ -149,21 +149,21 @@ export function Payment() {
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('wallet')}
-                  className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all hover:shadow-md ${paymentMethod === 'wallet'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border bg-white'
+                  className={`flex items-center gap-4 p-4 rounded-md border-2 transition-all ${paymentMethod === 'wallet'
+                    ? 'border-blue-600 bg-blue-50/50'
+                    : 'border-slate-100 bg-white hover:border-slate-200'
                     }`}
                 >
-                  <div className="p-3 bg-accent/10 rounded-xl">
-                    <Wallet className="w-6 h-6 text-accent" />
+                  <div className="p-3 bg-slate-100 rounded-md border border-slate-200">
+                    <Wallet className="w-6 h-6 text-slate-600" />
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="font-medium">ParkSmart Wallet</p>
-                    <p className="text-sm text-muted-foreground">Balance: KES 1,250.00</p>
+                    <p className="font-semibold text-slate-900">ParkSmart Wallet</p>
+                    <p className="text-xs text-slate-500">Available: KES 1,250.00</p>
                   </div>
                   <div className={`w-5 h-5 rounded-full border-2 ${paymentMethod === 'wallet'
-                    ? 'border-primary bg-primary'
-                    : 'border-muted-foreground'
+                    ? 'border-blue-600 bg-blue-600'
+                    : 'border-slate-300'
                     }`}>
                     {paymentMethod === 'wallet' && (
                       <div className="w-full h-full rounded-full bg-white scale-50" />
@@ -179,13 +179,13 @@ export function Payment() {
                     M-Pesa Phone Number
                   </label>
                   <div className="relative">
-                    <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-accent" />
+                    <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <Input
                       type="tel"
                       placeholder="07XX XXX XXX"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="pl-12 h-14 bg-white rounded-2xl border border-border"
+                      className="pl-12 h-12 bg-slate-50 rounded-md border border-slate-200"
                       required
                     />
                   </div>
@@ -200,43 +200,45 @@ export function Payment() {
 
           {/* Right Column: Payment Summary */}
           <div className="lg:col-span-5 lg:sticky lg:top-8">
-            <div className="bg-white rounded-3xl border border-border/50 shadow-sm p-6 md:p-8">
-              <h3 className="text-xl font-semibold mb-6">Payment Summary</h3>
+            <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6 md:p-8">
+              <h3 className="text-xl font-semibold mb-6 text-slate-900 border-b border-slate-100 pb-2">Payment Summary</h3>
 
-              <div className="flex justify-between items-center mb-6 p-4 bg-secondary/30 rounded-2xl">
-                <span className="text-lg text-muted-foreground">Amount to Pay</span>
-                <span className="text-3xl font-bold text-accent">KES {bookingDetails.totalCost.toFixed(0)}</span>
+              <div className="flex justify-between items-center mb-6 p-4 bg-slate-50 rounded-md border border-slate-100">
+                <span className="text-lg text-slate-500">Total Payable</span>
+                <span className="text-3xl font-bold text-blue-600">KES {bookingDetails.totalCost.toFixed(0)}</span>
               </div>
 
-              <div className="space-y-3 text-sm text-muted-foreground mb-8">
+              <div className="space-y-3 text-sm text-slate-500 mb-8 px-2">
                 <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>KES {bookingDetails.totalCost.toFixed(0)}</span>
+                  <span>Parking service fee</span>
+                  <span className="text-slate-900 font-medium">KES {bookingDetails.totalCost.toFixed(0)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Tax (0%)</span>
-                  <span>KES 0.00</span>
+                  <span>Platform Processing (0%)</span>
+                  <span className="text-slate-900 font-medium font-mono">KES 0.00</span>
                 </div>
               </div>
 
               {error && (
-                <p className="text-sm text-destructive text-center">{error}</p>
+                <div className="p-3 bg-red-50 border border-red-100 rounded-md mb-6">
+                  <p className="text-sm text-red-600 text-center">{error}</p>
+                </div>
               )}
 
               <Button
                 type="submit"
-                className="w-full h-14 rounded-2xl bg-accent text-white hover:bg-accent/90 text-lg font-medium shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
+                className="w-full h-14 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold shadow-blue-600/10 shadow-lg transition-all"
                 disabled={(paymentMethod === 'mpesa' && !phoneNumber) || isSubmitting}
               >
                 {isSubmitting
-                  ? 'Processing...'
+                  ? 'Verifying Transaction...'
                   : paymentMethod === 'mpesa'
-                  ? 'Pay with M-Pesa'
-                  : 'Confirm Payment'}
+                  ? 'Initiate M-Pesa Payment'
+                  : 'Complete Booking'}
               </Button>
 
-              <p className="text-center text-xs text-muted-foreground mt-4">
-                Secure payment powered by Stripe & Safaricom
+              <p className="text-center text-xs text-slate-400 mt-4 tracking-tight">
+                Payments processed securely via PCI-DSS compliant gateways.
               </p>
             </div>
           </div>

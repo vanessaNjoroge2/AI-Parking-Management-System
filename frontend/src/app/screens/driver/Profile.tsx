@@ -1,12 +1,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
-import { User, Mail, Phone, Settings, LogOut, ChevronRight, Shield, Bell, CreditCard } from 'lucide-react';
+import { User, Mail, Phone, Settings, LogOut, ChevronRight, Shield, Bell, CreditCard, ArrowLeft, Moon, Sun } from 'lucide-react';
 import { getStoredAuth, clearAuth } from '../../services/authStorage';
 import { Button } from '../../components/ui/button';
+import { useTheme } from 'next-themes';
 
 export function Profile() {
     const navigate = useNavigate();
     const auth = getStoredAuth();
+    const { theme, setTheme } = useTheme();
+
+    const isDark = theme === 'dark';
 
     const handleSignOut = () => {
         clearAuth();
@@ -27,9 +31,17 @@ export function Profile() {
 
     return (
         <div className="min-h-screen bg-background p-6">
-            <div className="max-w-[390px] mx-auto pt-8">
+            <div className="max-w-[390px] mx-auto pt-4 text-left">
+                {/* Back Button */}
+                <button
+                    onClick={() => navigate(-1)}
+                    className="p-3 bg-white dark:bg-slate-800 rounded-full shadow-sm border border-border/50 mb-6 hover:bg-slate-50 transition-colors"
+                >
+                    <ArrowLeft className="w-5 h-5 text-foreground" />
+                </button>
+
                 {/* Profile Card */}
-                <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-border/50 text-center mb-10">
+                <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] p-8 shadow-sm border border-border/50 text-center mb-10">
                     <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                         <User className="w-12 h-12 text-primary" />
                     </div>
@@ -51,17 +63,33 @@ export function Profile() {
                     {sections.map((item, idx) => (
                         <button
                             key={idx}
-                            className="w-full bg-white rounded-2xl p-4 flex items-center justify-between group hover:bg-primary/5 transition-colors border border-border/50"
+                            className="w-full bg-white dark:bg-slate-800 rounded-2xl p-4 flex items-center justify-between group hover:bg-primary/5 transition-colors border border-border/50"
                         >
                             <div className="flex items-center gap-4">
-                                <div className="p-2 bg-secondary rounded-xl group-hover:bg-primary/10 transition-colors">
+                                <div className="p-2 bg-secondary dark:bg-slate-700 rounded-xl group-hover:bg-primary/10 transition-colors">
                                     <item.icon className="w-5 h-5 text-primary" />
                                 </div>
-                                <span className="font-medium">{item.label}</span>
+                                <span className="font-medium text-foreground">{item.label}</span>
                             </div>
                             <ChevronRight className="w-5 h-5 text-muted-foreground" />
                         </button>
                     ))}
+
+                    {/* Theme Toggle */}
+                    <button
+                        onClick={() => setTheme(isDark ? 'light' : 'dark')}
+                        className="w-full bg-white dark:bg-slate-800 rounded-2xl p-4 flex items-center justify-between group hover:bg-primary/5 transition-colors border border-border/50"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="p-2 bg-secondary dark:bg-slate-700 rounded-xl group-hover:bg-primary/10 transition-colors">
+                                {isDark ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-slate-700" />}
+                            </div>
+                            <span className="font-medium text-foreground">{isDark ? 'Light' : 'Dark'} Mode</span>
+                        </div>
+                        <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 ${isDark ? 'bg-blue-600' : 'bg-slate-200'}`}>
+                            <div className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ${isDark ? 'translate-x-6' : 'translate-x-0'}`} />
+                        </div>
+                    </button>
                 </div>
 
                 {/* Sign Out */}

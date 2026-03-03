@@ -9,19 +9,19 @@
   --popover: #ffffff;
   --popover-foreground: #0F172A;
 
-  /* Primary: Deep Indigo */
-  --primary: #1E3A8A;
+  /* Primary: Deep Navy/Slate */
+  --primary: #1E293B;
   --primary-foreground: #ffffff;
 
-  /* Secondary: Soft Blue Tint (was gray) */
-  --secondary: #EFF6FF;
-  --secondary-foreground: #1E3A8A;
+  /* Secondary: Light Slate */
+  --secondary: #F1F5F9;
+  --secondary-foreground: #1E293B;
 
   --muted: #F1F5F9;
   --muted-foreground: #64748B;
 
-  /* Accent: Emerald (Success/Growth) */
-  --accent: #10B981;
+  /* Accent: Bold Blue */
+  --accent: #2563EB;
   --accent-foreground: #ffffff;
 
   /* Destructive: Bold Red */
@@ -38,31 +38,26 @@
   --input: transparent;
   --input-background: #ffffff;
   --switch-background: #CBD5E1;
-  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
   --font-weight-normal: 400;
-  --ring: #1E3A8A;
+  --ring: #1E293B;
 
   /* Charts */
-  --chart-1: #1E3A8A;
-  /* Indigo */
-  --chart-2: #10B981;
-  /* Emerald */
+  --chart-1: #1E293B;
+  --chart-2: #2563EB;
   --chart-3: #F59E0B;
-  /* Amber */
   --chart-4: #EF4444;
-  /* Red */
   --chart-5: #8B5CF6;
-  /* Violet */
 
-  --radius: 1rem;
+  --radius: 0.5rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #0F172A;
-  --sidebar-primary: #1E3A8A;
+  --sidebar-primary: #1E293B;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #EFF6FF;
-  --sidebar-accent-foreground: #1E3A8A;
+  --sidebar-accent: #F1F5F9;
+  --sidebar-accent-foreground: #1E293B;
   --sidebar-border: #E2E8F0;
-  --sidebar-ring: #1E3A8A;
+  --sidebar-ring: #1E293B;
 }
 
 .dark {
@@ -167,26 +162,26 @@
 
   h1 {
     font-size: var(--text-2xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.25;
   }
 
   h2 {
     font-size: var(--text-xl);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.3;
   }
 
   h3 {
     font-size: var(--text-lg);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.4;
   }
 
   h4 {
     font-size: var(--text-base);
-    font-weight: var(--font-weight-medium);
-    line-height: 1.5;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.4;
   }
 
   label {

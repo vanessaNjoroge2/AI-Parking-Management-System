@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { ArrowLeft, SlidersHorizontal, Map as MapIcon, List, Search, Loader2, Star, Navigation, Info } from 'lucide-react';
+import { ArrowLeft, SlidersHorizontal, Map as MapIcon, List, Search, Loader2, Star, Navigation, Info, Zap, Car, Accessibility, Shield, Camera, X } from 'lucide-react';
 import { MapComponent } from '../../components/map/MapComponent';
 import { CustomMarker } from '../../components/map/CustomMarker';
 import { FilterPanel, FilterState } from '../../components/map/FilterPanel';
@@ -122,42 +122,49 @@ export function MapResults() {
   const selectedLot = useMemo(() => allLots.find(l => l.id === selectedLotId), [selectedLotId, allLots]);
 
   return (
-    <div className="h-screen w-full flex flex-col md:flex-row bg-background overflow-hidden relative">
+    <div className="h-[calc(100vh-64px)] w-full flex flex-col md:flex-row bg-background overflow-hidden relative">
 
       {/* HEADER / SEARCH BAR */}
-      <div className="absolute top-4 left-4 right-4 md:left-[470px] z-[400] flex gap-2 pointer-events-none">
+      <div className="absolute top-2 left-4 right-4 md:left-[470px] z-[400] flex gap-2 pointer-events-none">
         <Button
           size="icon"
-          className="h-12 w-12 rounded-2xl shadow-xl bg-white text-foreground hover:bg-secondary pointer-events-auto"
+          className="h-12 w-12 rounded-lg shadow-lg bg-card text-foreground hover:bg-muted border border-border pointer-events-auto"
           onClick={() => navigate('/search')}
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
 
-        <form onSubmit={handleSearch} className="flex-1 pointer-events-auto shadow-xl">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+        <form onSubmit={handleSearch} className="flex-1 pointer-events-auto border border-border rounded-lg bg-card shadow-lg focus-within:ring-4 focus-within:ring-blue-500/5 focus-within:border-blue-500 transition-all overflow-hidden flex items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
             <Input
               placeholder="Search destination..."
-              className="pl-10 h-12 rounded-2xl bg-white border-0 text-base"
+              className="pl-10 h-12 border-none shadow-none focus-visible:ring-0 text-base"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-primary w-5 h-5" />}
+            {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-blue-600 w-5 h-5" />}
           </div>
         </form>
 
         <div className="flex gap-2 pointer-events-auto">
           <Button
+            type="button"
+            onClick={handleSearch}
+            className="h-12 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg shadow-lg transition-all"
+          >
+            Enter
+          </Button>
+          <Button
             size="icon"
-            className="h-12 w-12 rounded-2xl shadow-xl bg-white text-foreground hover:bg-secondary"
+            className="h-12 w-12 rounded-lg shadow-lg bg-card text-foreground hover:bg-muted border border-border"
             onClick={() => setShowFilters(!showFilters)}
           >
             <SlidersHorizontal className="w-5 h-5" />
           </Button>
           <Button
             size="icon"
-            className="md:hidden h-12 w-12 rounded-2xl shadow-xl bg-primary text-white"
+            className="md:hidden h-12 w-12 rounded-lg shadow-lg bg-slate-900 text-white"
             onClick={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
           >
             {viewMode === 'map' ? <List className="w-5 h-5" /> : <MapIcon className="w-5 h-5" />}
@@ -167,7 +174,7 @@ export function MapResults() {
 
       {/* FILTER PANEL */}
       <div className={`
-        fixed inset-y-0 left-0 w-full md:w-[450px] bg-white z-[602] 
+        fixed inset-y-0 left-0 w-full md:w-[450px] bg-card z-[602] 
         transition-transform duration-300 shadow-2xl
         ${showFilters ? 'translate-x-0' : '-translate-x-full'}
       `}>
@@ -184,9 +191,9 @@ export function MapResults() {
         md:flex flex-col 
         w-full md:w-[450px] 
         h-full bg-white z-[500] shadow-xl 
-        md:relative absolute inset-0 pt-24 md:pt-[88px]
+        md:relative absolute inset-0 pt-14 md:pt-2
       `}>
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto pt-1 px-4 pb-4 space-y-4">
           <div className="flex justify-between items-baseline mb-2 px-2">
             <h2 className="text-xl font-bold">
               {isLoadingData ? 'Searching...' : `${visibleLots.length} Parking Lots`}
@@ -210,14 +217,14 @@ export function MapResults() {
                 if (window.innerWidth < 768) setViewMode('map');
               }}
               className={`
-                p-4 rounded-3xl border transition-all cursor-pointer group
+                p-4 rounded-lg border transition-all cursor-pointer group
                 ${selectedLotId === lot.id
-                  ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                  : 'border-border bg-white hover:border-primary/50'}
+                  ? 'border-blue-600 bg-blue-50/10 dark:bg-blue-900/20 ring-1 ring-blue-600'
+                  : 'border-border bg-card hover:border-blue-300'}
               `}
             >
               <div className="flex gap-4">
-                <div className="w-24 h-24 rounded-2xl overflow-hidden bg-secondary flex-shrink-0">
+                <div className="w-24 h-24 rounded-md overflow-hidden bg-slate-100 flex-shrink-0">
                   <img
                     src={getImageUrl(lot.photos?.[0])}
                     alt={lot.name}
@@ -226,25 +233,29 @@ export function MapResults() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start mb-1">
-                    <h3 className="font-bold text-lg truncate pr-2">{lot.name}</h3>
-                    <StatusBadge status={lot.isActive ? 'available' : 'occupied'} />
+                    <h3 className="font-semibold text-lg text-foreground truncate pr-2">{lot.name}</h3>
+                    <StatusBadge status={lot.isActive ? 'available' : 'full'}>
+                      {lot.isActive
+                        ? `${Math.floor(lot.capacityTotal * 0.4)}/${lot.capacityTotal} Spots`
+                        : `Full (0/${lot.capacityTotal})`}
+                    </StatusBadge>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate mb-2">{lot.addressText || 'Nairobi, Kenya'}</p>
+                  <p className="text-xs text-slate-500 truncate mb-2">{lot.addressText || 'Nairobi, Kenya'}</p>
 
                   <div className="flex items-center gap-3 mb-3">
                     <div className="flex items-center gap-1 text-amber-500">
                       <Star className="w-3 h-3 fill-current" />
                       <span className="text-xs font-bold">4.8</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
                       {getLotType(lot)}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-primary">
+                    <span className="font-bold text-blue-600">
                       KES {getPrimaryPricing(lot).amount}
-                      <span className="text-[10px] text-muted-foreground font-normal">/hr</span>
+                      <span className="text-[10px] text-slate-400 font-normal">/hr</span>
                     </span>
                   </div>
                 </div>
@@ -263,8 +274,9 @@ export function MapResults() {
           onBoundsChanged={() => { }}
         >
           <MapController center={mapCenter} />
-          {visibleLots.map((lot) => {
+          {allLots.map((lot) => {
             const pricing = getPrimaryPricing(lot);
+            const isVisible = visibleLots.some(vl => vl.id === lot.id);
             return (
               <CustomMarker
                 key={lot.id}
@@ -272,59 +284,109 @@ export function MapResults() {
                 position={[lot.lat, lot.lng]}
                 title={lot.name}
                 price={pricing.isFree ? 0 : pricing.amount}
-                status={lot.isActive ? 'available' : 'occupied'}
+                status={lot.isActive ? 'available' : 'full'}
                 fee={pricing.isFree ? 'no' : 'yes'}
                 access={getLotAccess(lot)}
                 type={getLotType(lot)}
                 onBook={() => setSelectedLotId(lot.id)}
+                opacity={1}
+                isCovered={lot.isCovered || false}
+                hasEvCharging={lot.hasEvCharging || false}
+                wheelchairFriendly={lot.wheelchairFriendly || false}
+                allowedVehicleSizes={lot.allowedVehicleSizes}
               />
             );
           })}
         </MapComponent>
 
-        {/* FIXED DETAIL CARD (Requested) */}
+        {/* FIXED DETAIL CARD */}
         {selectedLot && (
           <div className="absolute bottom-6 left-6 right-6 md:left-auto md:w-[380px] z-[400] animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="bg-white rounded-[2.5rem] shadow-2xl p-6 border border-border/50 relative overflow-hidden group">
+            <div className="bg-card rounded-lg shadow-2xl p-6 border border-border relative overflow-hidden group">
               <button
                 onClick={() => setSelectedLotId(null)}
-                className="absolute top-4 right-4 z-10 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
+                className="absolute top-4 right-4 z-10 p-2 bg-slate-100/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-slate-200 transition-colors"
               >
-                <SlidersHorizontal className="w-4 h-4 rotate-90" />
+                <X className="w-4 h-4" />
               </button>
 
               <div className="flex gap-4 mb-4">
-                <div className="w-24 h-24 rounded-[1.5rem] overflow-hidden bg-secondary">
+                <div className="w-24 h-24 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
                   <img src={getImageUrl(selectedLot.photos?.[0])} className="w-full h-full object-cover" alt="" />
                 </div>
-                <div className="flex-1 py-1">
-                  <h3 className="font-bold text-xl mb-1">{selectedLot.name}</h3>
+                <div className="flex-1 py-1 min-w-0">
+                  <div className="flex items-start justify-between mb-1">
+                    <h3 className="font-semibold text-xl text-foreground truncate pr-2">{selectedLot.name}</h3>
+                    <div className="flex gap-1">
+                      {selectedLot.hasEvCharging && <Zap className="w-4 h-4 text-blue-600" />}
+                      {selectedLot.isCovered && <Car className="w-4 h-4 text-slate-400" />}
+                      {selectedLot.wheelchairFriendly && <Accessibility className="w-4 h-4 text-slate-400" />}
+                    </div>
+                  </div>
                   <div className="flex items-center gap-1 text-amber-500 mb-2">
                     <Star className="w-4 h-4 fill-current" />
                     <span className="text-sm font-bold">4.8 (120 reviews)</span>
                   </div>
                   <div className="flex gap-2">
-                    <StatusBadge status={selectedLot.isActive ? 'available' : 'occupied'} />
-                    <span className="bg-secondary text-[10px] font-bold uppercase py-1 px-2 rounded-lg">
-                      {getLotType(selectedLot)}
-                    </span>
+                    <StatusBadge status={selectedLot.isActive ? 'available' : 'full'}>
+                      {selectedLot.isActive
+                        ? `${selectedLot.capacityTotal - Math.floor(selectedLot.capacityTotal * 0.2)}/${selectedLot.capacityTotal} Spots`
+                        : `Full (0/${selectedLot.capacityTotal})`}
+                    </StatusBadge>
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-3 mt-6">
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <span className="font-bold text-xl text-foreground">
+                  KES {getPrimaryPricing(selectedLot).amount}
+                  <span className="text-xs text-slate-500 font-normal ml-0.5">/hr</span>
+                </span>
+                <div className="h-4 w-px bg-border" />
+                <div className="flex flex-wrap gap-1.5">
+                  {(selectedLot.allowedVehicleSizes || ['standard']).map(size => (
+                    <span key={size} className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                      {size}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* FACILITY FEATURES LIKE IN CARD */}
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {selectedLot.isGuarded && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-card border border-border shadow-sm transition-all hover:bg-muted">
+                    <Shield className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">24/7 Guarded</span>
+                  </div>
+                )}
+                {selectedLot.hasCctv && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-card border border-border shadow-sm transition-all hover:bg-muted">
+                    <Camera className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">CCTV Monitoring</span>
+                  </div>
+                )}
+                {selectedLot.hasLighting && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-card border border-border shadow-sm transition-all hover:bg-muted">
+                    <Star className="w-4 h-4 text-blue-600" />
+                    <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Well Lit</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 mt-4">
                 <Button
                   onClick={() => handleBook(selectedLot)}
-                  className="flex-1 h-14 rounded-2xl bg-primary text-white text-lg font-bold"
+                  className="flex-1 h-12 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-base font-bold tracking-tight"
                 >
-                  Book KES {getPrimaryPricing(selectedLot).amount}
+                  Proceed to Booking
                 </Button>
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-14 w-14 rounded-2xl border-2"
+                  className="h-12 w-12 rounded-lg border border-border text-muted-foreground hover:bg-muted"
                 >
-                  <Navigation className="w-6 h-6 text-primary" />
+                  <Navigation className="w-5 h-5 text-blue-600" />
                 </Button>
               </div>
             </div>
@@ -333,7 +395,7 @@ export function MapResults() {
 
         {/* Scanning Overlay */}
         {isLoadingData && (
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[400] bg-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-border">
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[400] bg-card px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-border">
             <Loader2 className="animate-spin w-5 h-5 text-primary" />
             <span className="text-sm font-bold text-primary">Scanning Nairobi...</span>
           </div>

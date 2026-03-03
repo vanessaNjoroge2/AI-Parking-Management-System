@@ -80,115 +80,134 @@ export function Login() {
 
   return (
     <MobileFrame>
-      <div className="min-h-screen flex flex-col px-6 py-8 max-w-[390px] mx-auto">
-        {/* Logo */}
-        <div className="flex items-center gap-3 mb-12 mt-8">
-          <div className="bg-primary p-3 rounded-2xl">
-            <ParkingCircle className="w-8 h-8 text-white" />
+      <div className="min-h-screen flex flex-col">
+        {/* Decorative Top Section */}
+        <div className="bg-slate-900 py-12 px-6 flex flex-col items-center justify-center border-b border-slate-800">
+          <div className="bg-blue-600/10 p-4 rounded-lg border border-blue-500/20 mb-4">
+            <ParkingCircle className="w-12 h-12 text-blue-500" strokeWidth={1.5} />
           </div>
-          <span className="text-2xl text-primary">ParkSmart</span>
+          <div className="text-center">
+            <h1 className="text-3xl font-semibold text-white tracking-tight">ParkSmart</h1>
+            <p className="text-slate-400 text-sm font-medium">Urban Mobility Solutions</p>
+          </div>
         </div>
 
-        {/* Form */}
-        <div className="flex-1 flex flex-col">
-          <h1 className="text-3xl mb-2">
-            {isSignUp ? 'Create Account' : 'Welcome Back'}
-          </h1>
-          <p className="text-muted-foreground mb-8">
-            {isSignUp ? 'Sign up to get started' : 'Sign in to continue'}
-          </p>
+        {/* Content Section */}
+        <div className="flex-1 flex flex-col px-6 py-10 max-w-[390px] mx-auto w-full">
+          <div className="text-left mb-10">
+            <h2 className="text-3xl font-semibold text-slate-900 mb-2">
+              {isSignUp ? 'Create Account' : 'Welcome Back'}
+            </h2>
+            <p className="text-slate-500">
+              {isSignUp ? 'Join the urban parking network' : 'Sign in to your driver profile'}
+            </p>
+          </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 mb-6">
             {isSignUp && (
+              <div className="flex flex-col gap-1.5 text-left">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    type="text"
+                    placeholder="Enter your name"
+                    className="pl-11 h-12 bg-slate-50 rounded-md border-slate-200"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1.5 text-left">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
               <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input
-                  type="text"
-                  placeholder="Full Name"
-                  className="pl-12 h-14 bg-input-background rounded-2xl border-0"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  type="tel"
+                  placeholder="07XX XXX XXX"
+                  className="pl-11 h-12 bg-slate-50 rounded-md border-slate-200"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   required
                 />
               </div>
-            )}
-
-            <div className="relative">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="tel"
-                placeholder="Phone (e.g. 07XX XXX XXX)"
-                className="pl-12 h-14 bg-input-background rounded-2xl border-0"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-              />
             </div>
 
             {isSignUp && (
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  type="email"
-                  placeholder="Email (optional)"
-                  className="pl-12 h-14 bg-input-background rounded-2xl border-0"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+              <div className="flex flex-col gap-1.5 text-left">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Email (Optional)</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    type="email"
+                    placeholder="name@example.com"
+                    className="pl-11 h-12 bg-slate-50 rounded-md border-slate-200"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
               </div>
             )}
 
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="password"
-                placeholder="Password"
-                className="pl-12 h-14 bg-input-background rounded-2xl border-0"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+            <div className="flex flex-col gap-1.5 text-left">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Security Key</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  className="pl-11 h-12 bg-slate-50 rounded-md border-slate-200"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
             </div>
 
             {!isSignUp && (
-              <button type="button" className="text-primary text-sm text-right">
-                Forgot password?
+              <button type="button" className="text-blue-600 font-semibold text-sm text-right hover:text-blue-700">
+                Recover access?
               </button>
             )}
 
             {error && (
-              <p className="text-sm text-destructive text-center">{error}</p>
+              <div className="p-3 bg-red-50 border border-red-100 rounded-md">
+                <p className="text-sm text-red-600 text-center">{error}</p>
+              </div>
             )}
 
             <Button
               type="submit"
-              className="h-14 rounded-2xl bg-primary text-white mt-4"
+              className="h-12 rounded-md bg-blue-600 hover:bg-blue-700 text-white mt-4 font-semibold shadow-blue-600/10 shadow-lg"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Please wait...' : isSignUp ? 'Sign Up' : 'Sign In'}
+              {isSubmitting ? 'Verifying Account...' : isSignUp ? 'Register as Driver' : 'Sign in to ParkSmart'}
             </Button>
           </form>
 
           {/* Toggle Sign In/Up */}
-          <div className="text-center">
-            <span className="text-muted-foreground">
-              {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
+          <div className="text-center mb-8">
+            <span className="text-slate-500 text-sm">
+              {isSignUp ? 'Already on ParkSmart? ' : "New to the platform? "}
             </span>
             <button
               onClick={() => setIsSignUp(!isSignUp)}
-              className="text-primary"
+              className="text-blue-600 font-semibold text-sm hover:underline"
             >
-              {isSignUp ? 'Sign In' : 'Sign Up'}
+              {isSignUp ? 'Sign In' : 'Join Now'}
             </button>
           </div>
 
           {/* Owner Login Link */}
-          <div className="mt-auto pt-8 text-center border-t border-border">
+          <div className="mt-auto pt-8 text-center border-t border-slate-100">
             <button
               onClick={() => navigate('/owner/login')}
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="text-slate-400 hover:text-blue-600 text-sm transition-colors"
             >
-              Are you a parking lot owner?
+              Manage a parking facility? <span className="text-blue-600 font-semibold">Switch to Owner</span>
             </button>
           </div>
         </div>

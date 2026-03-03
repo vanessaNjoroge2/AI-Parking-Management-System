@@ -91,14 +91,15 @@ export function LotDetails() {
 
   const pricing = getPrimaryPricing(lot);
   const amenities = [
-    { icon: Car, label: lot.isCovered ? 'Covered Parking' : 'Open / Surface' },
-    { icon: Shield, label: lot.isGuarded ? 'Guarded' : 'Unguarded' },
-    { icon: Zap, label: pricing.isFree ? 'Free Parking' : 'Paid Parking' },
-    ...(lot.hasCctv ? [{ icon: Camera, label: 'CCTV Monitoring' }] : []),
-    ...(lot.hasLighting ? [{ icon: Eye, label: 'Well Lit' }] : []),
-    ...(lot.wheelchairFriendly ? [{ icon: Accessibility, label: 'Wheelchair Friendly' }] : []),
-    ...(lot.addressText ? [{ icon: Info, label: lot.addressText }] : []),
+    { icon: Car, label: lot.isCovered ? 'Covered Parking' : 'Open / Surface', active: lot.isCovered },
+    { icon: Zap, label: 'EV Charging Available', active: lot.hasEvCharging },
+    { icon: Accessibility, label: 'Wheelchair Friendly', active: lot.wheelchairFriendly },
+    { icon: Shield, label: lot.isGuarded ? '24/7 Guarded' : 'Standard Security', active: lot.isGuarded },
+    { icon: Camera, label: 'CCTV Monitoring', active: lot.hasCctv },
+    { icon: Info, label: lot.addressText || 'Nairobi Area', active: !!lot.addressText },
   ];
+
+  const vehicleSizes = lot.allowedVehicleSizes || ['standard'];
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -124,7 +125,7 @@ export function LotDetails() {
             </button>
           </div>
 
-          <div className="relative aspect-video bg-gray-200 rounded-3xl overflow-hidden shadow-sm">
+          <div className="relative aspect-video bg-slate-100 rounded-lg overflow-hidden shadow-sm border border-slate-200">
             <img
               src={images[currentImageIndex]}
               alt="Parking lot"
@@ -134,9 +135,9 @@ export function LotDetails() {
             {/* Mobile Navigation */}
             <button
               onClick={() => navigate('/map-results')}
-              className="absolute top-6 left-6 p-3 bg-white rounded-2xl shadow-lg lg:hidden"
+              className="absolute top-6 left-6 p-2 bg-white rounded-md shadow-lg lg:hidden"
             >
-              <ArrowLeft className="w-5 h-5 text-primary" />
+              <ArrowLeft className="w-5 h-5 text-slate-900" />
             </button>
 
             {/* Image Controls */}
@@ -173,7 +174,7 @@ export function LotDetails() {
               <button
                 key={idx}
                 onClick={() => setCurrentImageIndex(idx)}
-                className={`aspect-video rounded-2xl overflow-hidden border-2 transition-all ${idx === currentImageIndex ? 'border-primary ring-2 ring-primary/20' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                className={`aspect-video rounded-md overflow-hidden border-2 transition-all ${idx === currentImageIndex ? 'border-blue-600 ring-2 ring-blue-600/10' : 'border-transparent opacity-70 hover:opacity-100'}`}
               >
                 <img src={img} alt={`View ${idx + 1}`} className="w-full h-full object-cover" />
               </button>
@@ -182,20 +183,20 @@ export function LotDetails() {
         </div>
 
         {/* Right Column: Details & Booking */}
-        <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-border/50 lg:sticky lg:top-8">
+        <div className="bg-card p-6 md:p-8 rounded-lg shadow-sm border border-border lg:sticky lg:top-8">
           {/* Header */}
           <div className="mb-6">
             <div className="flex items-start justify-between mb-3">
-              <div className="flex-1">
-                <h2 className="text-3xl font-bold mb-2 text-primary">{lot.name}</h2>
-                <div className="flex items-center gap-2 text-muted-foreground mb-3">
+              <div className="flex-1 text-left">
+                <h2 className="text-3xl font-semibold mb-2 text-foreground tracking-tight">{lot.name}</h2>
+                <div className="flex items-center gap-2 text-slate-500 mb-3">
                   <MapPin className="w-4 h-4" />
-                  <span className="text-base">Coordinates: {lot.lat.toFixed(4)}, {lot.lng.toFixed(4)}</span>
+                  <span className="text-sm">Coordinates: {lot.lat.toFixed(4)}, {lot.lng.toFixed(4)}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-1 bg-accent/10 px-3 py-1 rounded-xl">
-                <Star className="w-4 h-4 text-accent fill-accent" />
-                <span className="text-sm font-medium">4.5</span>
+              <div className="flex items-center gap-1 bg-amber-50 border border-amber-100 px-3 py-1 rounded-md">
+                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                <span className="text-sm font-semibold text-amber-700">4.5</span>
               </div>
             </div>
 
@@ -203,58 +204,72 @@ export function LotDetails() {
           </div>
 
           {/* Price */}
-          <div className="bg-secondary/50 rounded-2xl p-6 mb-8 border border-border/50">
+          <div className="bg-muted rounded-lg p-6 mb-8 border border-border">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Price</p>
-                <p className="text-3xl font-bold text-primary">
+              <div className="text-left">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Pricing</p>
+                <p className="text-3xl font-bold text-blue-600">
                   {pricing.isFree ? 'Free' : `${pricing.currency} ${pricing.amount}`}
-                  <span className="text-lg font-normal text-muted-foreground">{!pricing.isFree && `/${pricing.type.toLowerCase()}`}</span>
+                  <span className="text-lg font-normal text-slate-400">{!pricing.isFree && `/${pricing.type.toLowerCase()}`}</span>
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-muted-foreground mb-1">Capacity</p>
-                <p className="text-xl font-semibold">{lot.capacityTotal || 'N/A'}</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Capacity</p>
+                <p className="text-xl font-semibold text-foreground">{lot.capacityTotal || 'N/A'}</p>
               </div>
             </div>
           </div>
 
-          {/* Amenities */}
+          {/* Amenities & Sizes */}
           <div className="mb-8">
-            <h3 className="text-lg font-semibold mb-4">Details</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {amenities.map((amenity, index) => (
+            <h3 className="text-lg font-semibold mb-4 text-foreground border-b border-border pb-2 flex items-center justify-between">
+              Facility Features
+              <div className="flex gap-1.5">
+                {vehicleSizes.map(size => (
+                  <span key={size} className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100">
+                    {size}
+                  </span>
+                ))}
+              </div>
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {amenities.filter(a => a.active).map((amenity, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-3 px-4 py-3 bg-secondary rounded-2xl capitalize"
+                  className="flex items-center gap-3 px-4 py-3 bg-white border border-slate-100 rounded-md transition-all hover:border-blue-100 hover:bg-slate-50/50"
                 >
-                  <amenity.icon className="w-5 h-5 text-primary" />
-                  <span className="text-sm font-medium">{amenity.label}</span>
+                  <amenity.icon className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-medium text-slate-600">{amenity.label}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Availability */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold mb-3">Availability</h3>
+          <div className="mb-10">
+            <h3 className="text-lg font-semibold mb-3 text-foreground font-inter">Current Occupancy</h3>
             <div className="flex items-center gap-4">
               <div className="flex-1">
-                <div className="h-3 bg-secondary rounded-full overflow-hidden">
-                  <div className="h-full w-2/3 bg-accent rounded-full" />
+                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                    style={{ width: `${(Math.floor(lot.capacityTotal * 0.2) / lot.capacityTotal) * 100}%` }}
+                  />
                 </div>
               </div>
-              <span className="text-sm font-medium text-muted-foreground">High Likelihood</span>
+              <span className="text-sm font-bold text-slate-900 font-inter whitespace-nowrap">
+                {lot.capacityTotal - Math.floor(lot.capacityTotal * 0.2)}/{lot.capacityTotal} Spots
+              </span>
             </div>
           </div>
 
           {/* Book Button */}
           <Button
             onClick={() => navigate('/booking-form', { state: { lot } })}
-            className="w-full h-14 rounded-2xl bg-primary text-white text-lg font-medium shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
+            className="w-full h-14 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold shadow-blue-600/10 shadow-lg transition-all"
             disabled={!lot.isActive}
           >
-            {!lot.isActive ? 'Currently Unavailable' : 'Book Now'}
+            {!lot.isActive ? 'Facility Closed' : 'Continue to Booking'}
           </Button>
         </div>
       </div>

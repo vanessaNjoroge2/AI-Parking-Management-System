@@ -53,123 +53,147 @@ export function OwnerLogin() {
 
   return (
     <MobileFrame>
-      <div className="min-h-screen flex flex-col px-6 py-8 max-w-[390px] mx-auto">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/login')}
-          className="flex items-center gap-2 text-muted-foreground hover:text-primary mb-8 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Back to Driver Login</span>
-        </button>
+      <div className="min-h-screen flex flex-col">
+        {/* Back Button & Header Section */}
+        <div className="bg-slate-900 py-10 px-6 flex flex-col items-center justify-center border-b border-slate-800 relative">
+          <button
+            onClick={() => navigate('/login')}
+            className="absolute left-4 top-4 p-2 text-slate-400 hover:text-white transition-colors bg-white/5 rounded-md border border-white/10"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
 
-        {/* Logo */}
-        <div className="flex items-center gap-3 mb-12">
-          <div className="bg-primary p-3 rounded-2xl">
-            <ParkingCircle className="w-8 h-8 text-white" />
+          <div className="bg-blue-600/10 p-4 rounded-lg border border-blue-500/20 mb-4">
+            <ParkingCircle className="w-12 h-12 text-blue-500" strokeWidth={1.5} />
           </div>
-          <span className="text-2xl text-primary">ParkSmart</span>
+          <div className="text-center">
+            <h1 className="text-3xl font-semibold text-white tracking-tight">ParkSmart Owner</h1>
+            <p className="text-slate-400 text-sm font-medium">Facility Management Portal</p>
+          </div>
         </div>
 
-        {/* Form */}
-        <div className="flex-1 flex flex-col">
-          <h1 className="text-3xl mb-2">{isSignUp ? 'Create Owner Account' : 'Owner Dashboard'}</h1>
-          <p className="text-muted-foreground mb-8">
-            {isSignUp ? 'Register to manage your parking lots' : 'Manage your parking lots'}
-          </p>
+        {/* Form Section */}
+        <div className="flex-1 flex flex-col px-6 py-10 max-w-[390px] mx-auto w-full">
+          <div className="text-left mb-8">
+            <h2 className="text-2xl font-semibold text-slate-900 mb-2">
+              {isSignUp ? 'Facility Registration' : 'Partner Dashboard'}
+            </h2>
+            <p className="text-slate-500 text-sm">
+              {isSignUp ? 'Register your parking facility to the network' : 'Secure access for facility partners'}
+            </p>
+          </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 mb-6">
             {isSignUp && (
+              <div className="flex flex-col gap-1.5 text-left">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    type="text"
+                    placeholder="Manager Name"
+                    className="pl-11 h-12 bg-slate-50 rounded-md border-slate-200"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1.5 text-left">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Business Phone</label>
               <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input
-                  type="text"
-                  placeholder="Full Name"
-                  className="pl-12 h-14 bg-input-background rounded-2xl border-0"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  type="tel"
+                  placeholder="07XX XXX XXX"
+                  className="pl-11 h-12 bg-slate-50 rounded-md border-slate-200"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   required
                 />
               </div>
-            )}
-
-            <div className="relative">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="tel"
-                placeholder="Phone"
-                className="pl-12 h-14 bg-input-background rounded-2xl border-0"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-              />
             </div>
 
             {isSignUp && (
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  type="email"
-                  placeholder="Email (optional)"
-                  className="pl-12 h-14 bg-input-background rounded-2xl border-0"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+              <div className="flex flex-col gap-1.5 text-left">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Business Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    type="email"
+                    placeholder="corporate@facility.com"
+                    className="pl-11 h-12 bg-slate-50 rounded-md border-slate-200"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
               </div>
             )}
 
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="password"
-                placeholder="Password"
-                className="pl-12 h-14 bg-input-background rounded-2xl border-0"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+            <div className="flex flex-col gap-1.5 text-left">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Credential Key</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  className="pl-11 h-12 bg-slate-50 rounded-md border-slate-200"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
             </div>
 
-            {!isSignUp && (
-              <button type="button" className="text-primary text-sm text-right">
-                Forgot password?
-              </button>
-            )}
-
             {error && (
-              <p className="text-sm text-destructive text-center">{error}</p>
+              <div className="p-3 bg-red-50 border border-red-100 rounded-md mb-2">
+                <p className="text-sm text-red-600 text-center">{error}</p>
+              </div>
             )}
 
             <Button
               type="submit"
-              className="h-14 rounded-2xl bg-primary text-white mt-4"
+              className="h-12 rounded-md bg-blue-600 hover:bg-blue-700 text-white mt-4 font-semibold shadow-blue-600/10 shadow-lg"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Please wait...' : isSignUp ? 'Create Account' : 'Sign In'}
+              {isSubmitting ? 'Authenticating...' : isSignUp ? 'Register Facility' : 'Enter Dashboard'}
             </Button>
           </form>
 
           {/* Toggle Sign In/Up */}
-          <div className="text-center mb-8">
-            <span className="text-muted-foreground">
-              {isSignUp ? 'Already have an account? ' : 'New parking lot owner? '}
+          <div className="text-center mb-10">
+            <span className="text-slate-500 text-sm">
+              {isSignUp ? 'Already a partner? ' : 'New parking lot manager? '}
             </span>
             <button
               onClick={() => setIsSignUp(!isSignUp)}
-              className="text-primary"
+              className="text-blue-600 font-semibold text-sm hover:underline"
             >
-              {isSignUp ? 'Sign In' : 'Register Now'}
+              {isSignUp ? 'Sign In' : 'Join Partner Network'}
             </button>
           </div>
 
-          {/* Benefits */}
-          <div className="bg-gradient-to-br from-primary to-accent rounded-2xl p-6 text-white">
-            <h3 className="text-lg mb-3">Owner Benefits</h3>
-            <ul className="space-y-2 text-sm text-white/90">
-              <li>• Manage multiple parking lots</li>
-              <li>• Real-time booking updates</li>
-              <li>• Revenue analytics & insights</li>
-              <li>• Automated payment processing</li>
+          {/* Benefits Section */}
+          <div className="bg-slate-900 rounded-lg p-6 text-white border border-slate-800 shadow-xl overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-600/10 blur-2xl rounded-full translate-x-1/2 -translate-y-1/2" />
+            <h3 className="text-base font-semibold mb-4 text-white flex items-center gap-2 relative z-10">
+              <div className="w-1.5 h-4 bg-blue-600 rounded-full" />
+              Facility Management
+            </h3>
+            <ul className="space-y-3 relative z-10">
+              {[
+                'Enterprise Multi-lot Control',
+                'Real-time Occupancy Analytics',
+                'Business Revenue Insights',
+                'Automated Invoicing System'
+              ].map((benefit, idx) => (
+                <li key={idx} className="flex items-center gap-3 text-xs text-slate-300 font-medium tracking-tight">
+                  <div className="w-1 h-1 bg-blue-500 rounded-full" />
+                  {benefit}
+                </li>
+              ))}
             </ul>
           </div>
         </div>

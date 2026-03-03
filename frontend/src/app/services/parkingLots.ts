@@ -45,6 +45,8 @@ export interface ParkingLot {
   wheelchairFriendly?: boolean | null;
   hasCctv?: boolean | null;
   hasLighting?: boolean | null;
+  hasEvCharging?: boolean | null;
+  allowedVehicleSizes?: ('compact' | 'standard' | 'large')[];
   pricingRules?: PricingRule[];
   workingHours?: WorkingHour[];
   photos?: ParkingPhoto[];
@@ -78,6 +80,10 @@ export function normalizeParkingLot(lot: ParkingLot): NormalizedParkingLot {
     ...lot,
     lat: Number(lot.latitude),
     lng: Number(lot.longitude),
+    // Mocking for UI demonstration
+    hasEvCharging: lot.hasEvCharging ?? (lot.name.length % 3 === 0),
+    allowedVehicleSizes: lot.allowedVehicleSizes ??
+      (lot.name.length % 2 === 0 ? ['standard', 'large'] : ['compact', 'standard']),
   };
 }
 
