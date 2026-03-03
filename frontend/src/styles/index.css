@@ -17,3 +17,34 @@
 .animate-fade-in {
   animation: fade-in 0.6s ease-out;
 }
+
+.user-location-marker {
+  background: transparent;
+  border: none;
+}
+
+.user-location-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #2563eb;
+  box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6), 0 0 12px rgba(37, 99, 235, 0.6);
+  display: block;
+  position: relative;
+  animation: user-location-pulse 1.6s ease-out infinite;
+}
+
+@keyframes user-location-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.6);
+    transform: scale(1);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(37, 99, 235, 0);
+    transform: scale(1.1);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+    transform: scale(1);
+  }
+}

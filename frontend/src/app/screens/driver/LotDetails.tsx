@@ -101,6 +101,38 @@ export function LotDetails() {
 
   const vehicleSizes = lot.allowedVehicleSizes || ['standard'];
 
+  const occupancy = useMemo(() => {
+    const capacity = lot.capacityTotal || 0;
+    if (!capacity) {
+      return { occupied: 0, available: 0, percent: 0, status: 'No capacity', color: 'bg-slate-300' };
+    }
+    if (!lot.isActive) {
+      return { occupied: capacity, available: 0, percent: 100, status: 'Closed', color: 'bg-rose-500' };
+    }
+
+    let seed = 0;
+    for (const char of lot.id) {
+      seed = (seed + char.charCodeAt(0)) % 100;
+    }
+    const occupancyPercent = 20 + (seed % 60); // 20% - 79%
+    const occupied = Math.min(capacity, Math.max(1, Math.round((occupancyPercent / 100) * capacity)));
+    const available = Math.max(capacity - occupied, 0);
+    const percent = (occupied / capacity) * 100;
+    const availabilityRatio = available / capacity;
+
+    const status = availabilityRatio > 0.5 ? 'Plenty of space'
+      : availabilityRatio > 0.2 ? 'Limited spots'
+        : 'Almost full';
+
+    const color = availabilityRatio > 0.5
+      ? 'bg-emerald-500'
+      : availabilityRatio > 0.2
+        ? 'bg-amber-500'
+        : 'bg-rose-500';
+
+    return { occupied, available, percent, status, color };
+  }, [lot]);
+
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
   };
@@ -191,7 +223,7 @@ export function LotDetails() {
                 <h2 className="text-3xl font-semibold mb-2 text-foreground tracking-tight">{lot.name}</h2>
                 <div className="flex items-center gap-2 text-slate-500 mb-3">
                   <MapPin className="w-4 h-4" />
-                  <span className="text-sm">Coordinates: {lot.lat.toFixed(4)}, {lot.lng.toFixed(4)}</span>
+                  <span className="text-sm">{lot.addressText || 'Nairobi, Kenya'}</span>
                 </div>
               </div>
               <div className="flex items-center gap-1 bg-amber-50 border border-amber-100 px-3 py-1 rounded-md">
@@ -252,13 +284,14 @@ export function LotDetails() {
               <div className="flex-1">
                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-blue-600 rounded-full transition-all duration-500"
-                    style={{ width: `${(Math.floor(lot.capacityTotal * 0.2) / lot.capacityTotal) * 100}%` }}
+                    className={`h-full ${occupancy.color} rounded-full transition-all duration-500`}
+                    style={{ width: `${occupancy.percent}%` }}
                   />
                 </div>
+                <p className="text-xs text-slate-500 mt-2">{occupancy.status}</p>
               </div>
               <span className="text-sm font-bold text-slate-900 font-inter whitespace-nowrap">
-                {lot.capacityTotal - Math.floor(lot.capacityTotal * 0.2)}/{lot.capacityTotal} Spots
+                {occupancy.available}/{lot.capacityTotal} Spots
               </span>
             </div>
           </div>

@@ -7,7 +7,8 @@ import { FilterPanel, FilterState } from '../../components/map/FilterPanel';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { StatusBadge } from '../../components/StatusBadge';
-import { useMap } from 'react-leaflet';
+import { CircleMarker, Marker, Tooltip, useMap } from 'react-leaflet';
+import { divIcon } from 'leaflet';
 import {
   getPrimaryPricing,
   normalizeParkingLot,
@@ -24,6 +25,8 @@ const getImageUrl = (photo?: ParkingPhoto) => {
   if (photo.url.startsWith('http')) return photo.url;
   return `${getApiBaseUrl()}${photo.url}`;
 };
+
+const defaultCenter: [number, number] = [-1.2896, 36.8151];
 
 function MapController({ center }: { center: [number, number] | null }) {
   const map = useMap();
@@ -45,11 +48,13 @@ export function MapResults() {
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [loadError, setLoadError] = useState('');
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
-  const [mapCenter, setMapCenter] = useState<[number, number]>([-1.2896, 36.8151]);
+  const [mapCenter, setMapCenter] = useState<[number, number]>(defaultCenter);
   const [allLots, setAllLots] = useState<NormalizedParkingLot[]>([]);
+  const [hasFallbackSearch, setHasFallbackSearch] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
-    radius: 1000,
+    radius: 2500,
     types: [],
     access: [],
     fee: [],
@@ -64,6 +69,15 @@ export function MapResults() {
         const normalized = lots
           .map(normalizeParkingLot)
           .filter((lot) => Number.isFinite(lot.lat) && Number.isFinite(lot.lng));
+        if (normalized.length === 0 && userLocation && !hasFallbackSearch) {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          setHasFallbackSearch(true);
+          setLoadError('No nearby lots found. Showing Nairobi results instead.');
+          setAllLots([]);
+          setMapCenter(defaultCenter);
+          setIsLoadingData(false);
+          return;
+        }
         setAllLots(normalized);
       } catch (error) {
         setAllLots([]);
@@ -72,17 +86,16 @@ export function MapResults() {
       setIsLoadingData(false);
     };
 
-    const timer = setTimeout(loadParking, 500);
+    const timer = setTimeout(loadParking, 800);
     return () => clearTimeout(timer);
-  }, [mapCenter, filters.radius]);
+  }, [mapCenter, filters.radius, userLocation, hasFallbackSearch]);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
+  const runSearch = async (query: string) => {
+    if (!query.trim()) return;
 
     setIsSearching(true);
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery + ' Kenya')}`);
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ' Kenya')}`);
       const data = await response.json();
 
       if (data && data.length > 0) {
@@ -95,6 +108,43 @@ export function MapResults() {
       setIsSearching(false);
     }
   };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await runSearch(searchQuery);
+  };
+
+  useEffect(() => {
+    const coords = location.state?.coords as { lat: number; lng: number } | undefined;
+    const destination = location.state?.destination as string | undefined;
+
+    if (coords) {
+      setSearchQuery(destination ?? 'Current location');
+      setMapCenter([coords.lat, coords.lng]);
+      setUserLocation([coords.lat, coords.lng]);
+      setHasFallbackSearch(false);
+      return;
+    }
+
+    setUserLocation(null);
+    setHasFallbackSearch(false);
+
+    if (destination) {
+      setSearchQuery(destination);
+      runSearch(destination);
+    }
+  }, [location.state?.coords, location.state?.destination]);
+
+  const userLocationIcon = useMemo(
+    () =>
+      divIcon({
+        className: 'user-location-marker',
+        html: '<span class="user-location-dot"></span>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+      }),
+    [],
+  );
 
   const getLotType = (lot: ParkingLot) => (lot.isCovered ? 'covered' : 'surface');
   const getLotAccess = (lot: ParkingLot) => (lot.isActive ? 'public' : 'private');
@@ -139,10 +189,22 @@ export function MapResults() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
             <Input
               placeholder="Search destination..."
-              className="pl-10 h-12 border-none shadow-none focus-visible:ring-0 text-base"
+              className="pl-10 pr-10 h-12 border-none shadow-none focus-visible:ring-0 text-base"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  localStorage.removeItem('parksmart:last-location');
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-200/60 transition-colors"
+              >
+                <X className="w-4 h-4 text-slate-400" />
+              </button>
+            )}
             {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-blue-600 w-5 h-5" />}
           </div>
         </form>
@@ -274,9 +336,17 @@ export function MapResults() {
           onBoundsChanged={() => { }}
         >
           <MapController center={mapCenter} />
-          {allLots.map((lot) => {
+          {userLocation && (
+            <>
+              <Marker position={userLocation} icon={userLocationIcon}>
+                <Tooltip direction="top" offset={[0, -10]} opacity={1}>
+                  You are here
+                </Tooltip>
+              </Marker>
+            </>
+          )}
+          {visibleLots.map((lot) => {
             const pricing = getPrimaryPricing(lot);
-            const isVisible = visibleLots.some(vl => vl.id === lot.id);
             return (
               <CustomMarker
                 key={lot.id}

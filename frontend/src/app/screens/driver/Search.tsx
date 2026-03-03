@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { Search as SearchIcon, MapPin, Calendar, Clock, SlidersHorizontal, History, ArrowUpDown, TrendingUp } from 'lucide-react';
+import { Search as SearchIcon, X, Calendar, Clock, SlidersHorizontal, History, TrendingUp, LocateFixed } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Calendar as CalendarComponent } from '../../components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
-import { format } from 'date-fns';
+import { format, isSameDay, startOfToday } from 'date-fns';
 import { fetchMyBookings, BookingRecord } from '../../services/bookings';
 
 export function Search() {
@@ -15,6 +15,14 @@ export function Search() {
   const [time, setTime] = useState(format(new Date(), 'HH:mm'));
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const cached = localStorage.getItem('parksmart:last-location');
+    if (cached) {
+      setDestination(cached);
+    }
+  }, []);
 
   useEffect(() => {
     const loadRecentSearches = async () => {
@@ -36,14 +44,56 @@ export function Search() {
   }, []);
 
   const handleSearch = () => {
-    if (destination) {
-      navigate('/map-results', { state: { destination, date: date.toISOString(), time } });
+    if (!destination.trim()) {
+      setError('Please enter a destination.');
+      return;
     }
+    setError('');
+    localStorage.setItem('parksmart:last-location', destination.trim());
+    navigate('/map-results', { state: { destination, date: date.toISOString(), time } });
   };
 
-  const handleNow = () => {
-    setTime(format(new Date(), 'HH:mm'));
+  const handleUseLocation = () => {
+    if (!navigator.geolocation) {
+      setError('Geolocation is not supported on this device.');
+      return;
+    }
+
+    setError('');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        let label = 'Current location';
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}`,
+          );
+          const data = await response.json();
+          label = data?.display_name ?? label;
+        } catch (err) {
+          console.error('Reverse geocoding failed:', err);
+        }
+
+        setDestination(label);
+        localStorage.setItem('parksmart:last-location', label);
+        navigate('/map-results', { state: { coords, date: date.toISOString(), time, destination: label } });
+      },
+      () => {
+        setError('Unable to access your location.');
+      },
+    );
   };
+
+  const today = startOfToday();
+  const minTime = isSameDay(date, today) ? format(new Date(), 'HH:mm') : undefined;
+
+  useEffect(() => {
+    if (!minTime) return;
+    if (time < minTime) {
+      setTime(minTime);
+    }
+  }, [minTime, time]);
 
 
   return (
@@ -58,32 +108,49 @@ export function Search() {
 
           <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
             {/* Search Input */}
-            <div className="mb-4">
+            <form
+              className="mb-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleSearch();
+              }}
+            >
               <div className="relative flex items-center bg-muted border border-border rounded-md focus-within:ring-4 focus-within:ring-blue-500/5 focus-within:border-blue-500 transition-all overflow-hidden group">
-                <MapPin className="absolute left-4 w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDestination('');
+                    setError('');
+                  }}
+                  className="absolute left-3 p-1.5 rounded-md hover:bg-slate-200/50 transition-colors"
+                >
+                  <X className="w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                </button>
                 <Input
                   type="text"
                   placeholder="Enter destination in Nairobi"
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
-                  className="pl-12 pr-24 h-12 bg-transparent border-none shadow-none focus-visible:ring-0 text-foreground placeholder:text-muted-foreground"
+                  className="pl-12 pr-[170px] h-12 bg-transparent border-none shadow-none focus-visible:ring-0 text-foreground placeholder:text-muted-foreground"
                 />
                 <div className="absolute right-1.5 flex items-center gap-1.5">
-                  <button
-                    onClick={() => setDestination('')}
-                    className="p-1.5 hover:bg-slate-200/50 rounded-md transition-colors"
-                  >
-                    <ArrowUpDown className="w-4 h-4 text-slate-400" />
-                  </button>
                   <Button
-                    onClick={handleSearch}
-                    className="h-9 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase tracking-widest rounded-sm shadow-sm transition-all"
+                    type="button"
+                    onClick={handleUseLocation}
+                    className="h-9 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase tracking-widest rounded-sm shadow-sm transition-all flex items-center gap-1"
                   >
-                    Enter
+                    <LocateFixed className="w-3 h-3" />
+                    Use my location
                   </Button>
                 </div>
               </div>
-            </div>
+              {destination && (
+                <p className="text-[11px] text-slate-500 mt-2">Destination: {destination}</p>
+              )}
+              {error && (
+                <p className="text-xs text-destructive mt-2">{error}</p>
+              )}
+            </form>
 
             {/* Date & Time */}
             <div className="grid grid-cols-2 gap-3 mb-4">
@@ -99,21 +166,25 @@ export function Search() {
                     mode="single"
                     selected={date}
                     onSelect={(d) => d && setDate(d)}
+                    disabled={(d) => d < today}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
 
-              <button
-                onClick={handleNow}
-                className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-md hover:bg-slate-100 transition-colors text-left"
-              >
+              <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-md text-left">
                 <Clock className="w-5 h-5 text-slate-400" />
-                <div className="flex flex-col">
+                <div className="flex flex-col flex-1">
                   <span className="text-[10px] text-slate-400 uppercase font-semibold leading-none mb-0.5">Time</span>
-                  <span className="text-sm font-medium text-slate-700">{time}</span>
+                  <Input
+                    type="time"
+                    value={time}
+                    min={minTime}
+                    onChange={(e) => setTime(e.target.value)}
+                    className="h-6 border-none bg-transparent p-0 text-sm font-medium text-slate-700 shadow-none focus-visible:ring-0"
+                  />
                 </div>
-              </button>
+              </div>
             </div>
 
             {/* Filters */}
@@ -149,12 +220,17 @@ export function Search() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {recentSearches.map((search, index) => (
+            {isLoadingHistory && (
+              <div className="col-span-full text-sm text-muted-foreground">Loading recent searches...</div>
+            )}
+
+            {!isLoadingHistory && recentSearches.map((search, index) => (
               <button
                 key={index}
                 onClick={() => {
                   setDestination(search);
-                  navigate('/map-results');
+                  setError('');
+                  navigate('/map-results', { state: { destination: search, date: date.toISOString(), time } });
                 }}
                 className="flex items-center gap-4 p-4 bg-white rounded-lg shadow-sm hover:shadow-xl hover:border-blue-200 transition-all border border-slate-200 group text-left"
               >
@@ -169,7 +245,14 @@ export function Search() {
             ))}
 
             {/* Add a "New Search" placeholder card to fill grid */}
-            <button className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-slate-400 h-full min-h-[80px]">
+            <button
+              type="button"
+              onClick={() => {
+                setDestination('');
+                setError('');
+              }}
+              className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-slate-400 h-full min-h-[80px]"
+            >
               <SearchIcon className="w-4 h-4" />
               <span className="text-sm font-medium">New Search</span>
             </button>
