@@ -6,23 +6,39 @@ import type { Booking, Payment, ParkingLot, Prisma } from '@prisma/client';
 @Injectable()
 export class PaymentsRepository {
   constructor(private readonly db: DatabaseService) {}
-
-  // ✅ correctly typed booking with nested payment and parkingLot
   findBooking(id: string) {
     return this.db.booking.findUnique({
       where: { id },
       include: {
         payment: true,
-        parkingLot: { select: { id: true, ownerId: true } },
+        parkingLot: {
+          include: {
+            pricingRules: {
+              where: { isActive: true },
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+            },
+          },
+        },
       },
-    }) as Promise<
-      | (Booking & {
-          payment: Payment | null;
-          parkingLot: { id: string; ownerId: string };
-        })
-      | null
-    >;
+    });
   }
+  // ✅ correctly typed booking with nested payment and parkingLot
+  // findBooking(id: string) {
+  //   return this.db.booking.findUnique({
+  //     where: { id },
+  //     include: {
+  //       payment: true,
+  //       parkingLot: { select: { id: true, ownerId: true } },
+  //     },
+  //   }) as Promise<
+  //     | (Booking & {
+  //         payment: Payment | null;
+  //         parkingLot: { id: string; ownerId: string };
+  //       })
+  //     | null
+  //   >;
+  // }
 
   createPayment(data: {
     bookingId: string;
@@ -138,27 +154,48 @@ export class PaymentsRepository {
     >;
   }
 
-  async updateByReference(
-    reference: string,
-    data: Prisma.PaymentUpdateManyMutationInput,
-  ) {
-    // safe await + proper type
-    const updated = await this.db.payment.updateMany({
+  async updateByReference(reference: string, data: Prisma.PaymentUpdateInput) {
+    return this.db.payment.update({
       where: { reference },
       data,
     });
-
-    return updated;
   }
   async confirmBooking(reference: string) {
     const payment = await this.db.payment.findUnique({
       where: { reference },
     });
+
     if (!payment) throw new Error('Payment not found');
 
-    return await this.db.booking.updateMany({
+    return this.db.booking.update({
       where: { id: payment.bookingId },
-      data: { status: 'CONFIRMED' },
+      data: { status: BookingStatus.CONFIRMED },
+    });
+  }
+  getPaymentByReference(reference: string) {
+    return this.db.payment.findUnique({
+      where: { reference },
+      include: {
+        booking: {
+          include: {
+            parkingLot: {
+              select: {
+                id: true,
+                name: true,
+                ownerId: true,
+                addressText: true,
+              },
+            },
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                phone: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 }

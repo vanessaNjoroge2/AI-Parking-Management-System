@@ -8,6 +8,7 @@ export class PaymentsCallbackController {
   @Post('kcb')
   @HttpCode(200)
   async kcbCallback(@Body() payload: any) {
+    console.log('KCB CALLBACK PAYLOAD:', payload);
     await this.paymentsService.handleKcbCallback(payload);
     return { message: 'Callback received' };
   }

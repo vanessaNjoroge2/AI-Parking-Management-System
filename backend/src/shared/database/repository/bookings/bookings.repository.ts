@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../service/database.service';
-import { BookingStatus } from '@prisma/client';
+import { BookingStatus, PaymentStatus } from '@prisma/client';
 
 @Injectable()
 export class BookingsRepository {
@@ -68,11 +68,21 @@ export class BookingsRepository {
   expireOldPendingBookings(cutoff: Date) {
     return this.db.booking.updateMany({
       where: {
-        status: 'PENDING',
+        status: BookingStatus.PENDING,
         createdAt: { lt: cutoff },
+        OR: [
+          { payment: null },
+          {
+            payment: {
+              status: {
+                not: PaymentStatus.SUCCESS,
+              },
+            },
+          },
+        ],
       },
       data: {
-        status: 'EXPIRED',
+        status: BookingStatus.EXPIRED,
       },
     });
   }

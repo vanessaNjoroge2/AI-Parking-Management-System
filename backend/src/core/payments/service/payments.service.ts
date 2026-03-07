@@ -4,24 +4,39 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { UserRole, PaymentStatus, PaymentMethod } from '@prisma/client';
+import {
+  UserRole,
+  PaymentStatus,
+  PaymentMethod,
+  BookingStatus,
+  Prisma,
+} from '@prisma/client';
 import { PaymentsRepository } from '../../../shared/database/repository/payments/payments.repository';
-import { KcbBuniService } from '../providers/kcb-buni.service';
+import { KcbBuniService, KcbStkResponse } from '../providers/kcb-buni.service';
 
-// ✅ Define the callback payload type outside the class
 interface KcbCallbackPayload {
   invoiceNumber?: string;
   BillRefNumber?: string;
   reference?: string;
   status?: string;
   ResultCode?: number;
-  [key: string]: any; // allow extra fields
+  [key: string]: unknown;
 }
 export interface StkPushResponse {
   message: string;
   reference: string;
   paymentId: string;
-  providerResponse: any;
+  providerResponse: KcbStkResponse;
+}
+export interface BookingWithPricing {
+  startTime: Date;
+  endTime: Date;
+  parkingLot: {
+    pricingRules: {
+      type: 'HOURLY' | 'DAILY' | 'FLAT';
+      amount: number;
+    }[];
+  };
 }
 
 @Injectable()
@@ -31,27 +46,6 @@ export class PaymentsService {
     private kcb: KcbBuniService,
   ) {}
 
-  async initiate(
-    user: { userId: string },
-    dto: { bookingId: string; method: PaymentMethod; phone?: string },
-  ) {
-    const booking = await this.repo.findBooking(dto.bookingId);
-    if (!booking) throw new NotFoundException('Booking not found');
-    if (booking.userId !== user.userId)
-      throw new ForbiddenException('Not your booking');
-    if (booking.payment)
-      throw new BadRequestException('Payment already exists for this booking');
-
-    const amount = 200; // TODO: calculate dynamically
-
-    return this.repo.createPayment({
-      bookingId: dto.bookingId,
-      method: dto.method,
-      amount,
-      phone: dto.phone,
-    });
-  }
-
   async stkPush(
     user: { userId: string },
     dto: { bookingId: string; phone: string },
@@ -59,26 +53,34 @@ export class PaymentsService {
     const booking = await this.repo.findBooking(dto.bookingId);
 
     if (!booking) throw new NotFoundException('Booking not found');
-    if (booking.userId !== user.userId)
-      throw new ForbiddenException('Not your booking');
-    if (booking.payment)
-      throw new BadRequestException('Payment already exists');
 
-    const amount = 200;
+    if (booking.userId !== user.userId) {
+      throw new ForbiddenException('Not your booking');
+    }
+
+    if (booking.status !== BookingStatus.PENDING) {
+      throw new BadRequestException('Only pending bookings can be paid for');
+    }
+
+    if (booking.payment) {
+      throw new BadRequestException('Payment already exists for this booking');
+    }
+
+    const normalizedPhone = this.normalizePhone(dto.phone);
+    const amount = this.calculateAmount(booking);
     const reference = `INV-${Date.now()}`;
 
-    const stkResponse: StkPushResponse = await this.kcb.stkPush({
-      phone: dto.phone,
+    const providerResponse: KcbStkResponse = await this.kcb.stkPush({
+      phone: normalizedPhone,
       amount,
       invoiceNumber: reference,
     });
 
-    // ✅ Removed 'status' field; Prisma default handles it
     const payment = await this.repo.createPayment({
       bookingId: dto.bookingId,
       method: PaymentMethod.MPESA,
       amount,
-      phone: dto.phone,
+      phone: normalizedPhone,
       reference,
     });
 
@@ -86,38 +88,55 @@ export class PaymentsService {
       message: 'STK Push sent',
       reference,
       paymentId: payment.id,
-      providerResponse: stkResponse,
+      providerResponse,
     };
   }
 
-  async simulateFail(user: { userId: string }, paymentId: string) {
-    const payment = await this.repo.findPayment(paymentId);
-    if (!payment) throw new NotFoundException('Payment not found');
-    if (!payment.booking)
-      throw new BadRequestException('Payment has no booking');
-    if (payment.booking.userId !== user.userId)
-      throw new ForbiddenException('Not your payment');
-    if (payment.status !== PaymentStatus.INITIATED)
-      throw new BadRequestException('Payment is not in INITIATED state');
-
-    return this.repo.markFailed(paymentId);
-  }
-
   async handleKcbCallback(payload: KcbCallbackPayload) {
+    if (!payload) {
+      throw new BadRequestException('Callback payload is missing');
+    }
     const reference =
       payload.invoiceNumber ?? payload.BillRefNumber ?? payload.reference;
-    if (!reference) return;
 
-    const success = payload.status === 'Success' || payload.ResultCode === 0;
+    if (!reference) {
+      throw new BadRequestException('Callback reference not found');
+    }
+
+    const success =
+      payload.status === 'Success' ||
+      payload.ResultCode === 0 ||
+      payload.ResultCode === Number(0);
+
+    const payment = await this.repo.getPaymentByReference(reference);
+
+    if (!payment) {
+      throw new NotFoundException(
+        `Payment not found for reference ${reference}`,
+      );
+    }
+
+    if (payment.status !== PaymentStatus.INITIATED) {
+      return {
+        message: 'Payment already processed',
+        reference,
+        currentStatus: payment.status,
+      };
+    }
 
     await this.repo.updateByReference(reference, {
       status: success ? PaymentStatus.SUCCESS : PaymentStatus.FAILED,
-      rawPayload: payload,
+      rawPayload: payload as Prisma.InputJsonValue,
     });
 
     if (success) {
       await this.repo.confirmBooking(reference);
     }
+
+    return {
+      message: success ? 'Payment marked successful' : 'Payment marked failed',
+      reference,
+    };
   }
 
   async getOne(user: { userId: string; role: UserRole }, id: string) {
@@ -177,5 +196,73 @@ export class PaymentsService {
     }
 
     return this.repo.listPayments(where, take, skip);
+  }
+  async getStatusByReference(
+    user: { userId: string; role: UserRole },
+    reference: string,
+  ) {
+    const payment = await this.repo.getPaymentByReference(reference);
+
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    if (user.role === UserRole.ADMIN) return payment;
+
+    if (payment.booking.userId === user.userId) return payment;
+
+    if (
+      user.role === UserRole.OWNER &&
+      payment.booking.parkingLot?.ownerId === user.userId
+    ) {
+      return payment;
+    }
+
+    throw new ForbiddenException('Not allowed to view this payment');
+  }
+  private normalizePhone(phone: string) {
+    if (phone.startsWith('0')) {
+      return `254${phone.slice(1)}`;
+    }
+
+    if (phone.startsWith('+254')) {
+      return phone.slice(1);
+    }
+
+    return phone;
+  }
+
+  private calculateAmount(booking: BookingWithPricing): number {
+    const pricingRule = booking.parkingLot?.pricingRules?.[0];
+
+    if (!pricingRule) {
+      throw new BadRequestException(
+        'No active pricing rule found for parking lot',
+      );
+    }
+
+    const start = new Date(booking.startTime);
+    const end = new Date(booking.endTime);
+    const diffMs = end.getTime() - start.getTime();
+
+    if (diffMs <= 0) {
+      throw new BadRequestException('Invalid booking duration');
+    }
+
+    if (pricingRule.type === 'HOURLY') {
+      const hours = Math.ceil(diffMs / (1000 * 60 * 60));
+      return hours * pricingRule.amount;
+    }
+
+    if (pricingRule.type === 'DAILY') {
+      const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      return days * pricingRule.amount;
+    }
+
+    if (pricingRule.type === 'FLAT') {
+      return pricingRule.amount;
+    }
+
+    throw new BadRequestException('Unsupported pricing type');
   }
 }
