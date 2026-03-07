@@ -298,7 +298,7 @@ export function MapResults() {
                     <h3 className="font-semibold text-lg text-foreground truncate pr-2">{lot.name}</h3>
                     <StatusBadge status={lot.isActive ? 'available' : 'full'}>
                       {lot.isActive
-                        ? `${Math.floor(lot.capacityTotal * 0.4)}/${lot.capacityTotal} Spots`
+                        ? <span><span className="text-blue-600 font-bold">{Math.floor(lot.capacityTotal * 0.4)}</span> / {lot.capacityTotal} Occupied</span>
                         : `Full (0/${lot.capacityTotal})`}
                     </StatusBadge>
                   </div>
@@ -400,7 +400,7 @@ export function MapResults() {
                   <div className="flex gap-2">
                     <StatusBadge status={selectedLot.isActive ? 'available' : 'full'}>
                       {selectedLot.isActive
-                        ? `${selectedLot.capacityTotal - Math.floor(selectedLot.capacityTotal * 0.2)}/${selectedLot.capacityTotal} Spots`
+                        ? <span><span className="text-blue-600 font-bold">{selectedLot.capacityTotal - Math.floor(selectedLot.capacityTotal * 0.2)}</span> / {selectedLot.capacityTotal} Occupied</span>
                         : `Full (0/${selectedLot.capacityTotal})`}
                     </StatusBadge>
                   </div>

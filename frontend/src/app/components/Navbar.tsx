@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router';
-import { ParkingCircle, User, LogOut } from 'lucide-react';
+import { ParkingCircle, User, LogOut, Download } from 'lucide-react';
 import { getStoredAuth, clearAuth } from '../services/authStorage';
 import { Button } from './ui/button';
 
@@ -13,7 +13,7 @@ export function Navbar() {
         ? [
             { label: 'Dashboard', to: '/owner/dashboard' },
             { label: 'Add Lot', to: '/owner/add-lot' },
-            { label: "Today's Bookings", to: '/owner/todays-bookings' },
+            { label: "My Bookings", to: '/owner/todays-bookings' },
             { label: 'Analytics', to: '/owner/analytics' },
         ]
         : role === 'DRIVER'
@@ -56,6 +56,20 @@ export function Navbar() {
             <div className="flex items-center gap-4">
                 {auth ? (
                     <>
+                        {(role === 'OWNER' || role === 'ADMIN') && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="flex items-center gap-2 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
+                                onClick={() => {
+                                    // Mock download logic
+                                    console.log('Downloading reports...');
+                                }}
+                            >
+                                <Download className="w-4 h-4" />
+                                <span className="hidden lg:inline">Reports</span>
+                            </Button>
+                        )}
                         <Link to="/profile" className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
                             <User className="w-5 h-5" />
                             <span className="hidden sm:inline font-medium">{auth.user.fullName}</span>
