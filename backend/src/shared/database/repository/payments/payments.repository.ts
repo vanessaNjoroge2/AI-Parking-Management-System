@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../service/database.service';
 import { BookingStatus, PaymentStatus, PaymentMethod } from '@prisma/client';
-import type { Booking, Payment, ParkingLot } from '@prisma/client';
+import type { Booking, Payment, ParkingLot, Prisma } from '@prisma/client';
 
 @Injectable()
 export class PaymentsRepository {
@@ -29,6 +29,7 @@ export class PaymentsRepository {
     method: PaymentMethod;
     amount: number;
     phone?: string | null;
+    reference?: string;
   }) {
     return this.db.payment.create({
       data: {
@@ -37,6 +38,7 @@ export class PaymentsRepository {
         amount: data.amount,
         phone: data.phone ?? null,
         status: PaymentStatus.INITIATED,
+        reference: data.reference ?? `INV-${Date.now()}`,
       },
     });
   }
@@ -134,5 +136,29 @@ export class PaymentsRepository {
         };
       })[]
     >;
+  }
+
+  async updateByReference(
+    reference: string,
+    data: Prisma.PaymentUpdateManyMutationInput,
+  ) {
+    // safe await + proper type
+    const updated = await this.db.payment.updateMany({
+      where: { reference },
+      data,
+    });
+
+    return updated;
+  }
+  async confirmBooking(reference: string) {
+    const payment = await this.db.payment.findUnique({
+      where: { reference },
+    });
+    if (!payment) throw new Error('Payment not found');
+
+    return await this.db.booking.updateMany({
+      where: { id: payment.bookingId },
+      data: { status: 'CONFIRMED' },
+    });
   }
 }

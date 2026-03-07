@@ -42,13 +42,13 @@ enum PricingType {
 }
 
 model User {
-  id       String   @id @default(uuid())
-  fullName String
-  phone    String   @unique
-  email    String?  @unique
-  password String
-  lastLoginAt  DateTime?   // 👈 ADD THIS
-  role     UserRole @default(DRIVER)
+  id          String    @id @default(uuid())
+  fullName    String
+  phone       String    @unique
+  email       String?   @unique
+  password    String
+  lastLoginAt DateTime? // 👈 ADD THIS
+  role        UserRole  @default(DRIVER)
 
   // relations
   parkingLots ParkingLot[] @relation("OwnerParkingLots")
@@ -72,9 +72,9 @@ model ParkingLot {
   longitude Decimal @db.Decimal(10, 7)
 
   capacityTotal Int
-  address String?
+  address       String?
   isActive      Boolean @default(true)
-  isCovered Boolean @default(false)
+  isCovered     Boolean @default(false)
 
   // feature flags
   isGuarded          Boolean @default(false)
@@ -178,9 +178,13 @@ model Payment {
 
   status PaymentStatus @default(INITIATED)
 
-  providerRef String? // Mpesa receipt number / transaction reference
-  phone       String? // for mpesa
-  rawPayload  Json?
+  providerRef        String? // Mpesa receipt number / transaction reference
+  phone              String? // for mpesa
+  rawPayload         Json?
+  provider           String  @default("KCB_BUNI")
+  reference          String  @unique
+  providerRequestId  String?
+  providerCheckoutId String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

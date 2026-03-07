@@ -11,25 +11,25 @@ import {
 import { JwtAuthGuard } from '../../../shared/guards/jwt/jwt-auth.guard';
 import type { AuthRequest } from '../../../shared/interfaces/authrequest.interface';
 import { PaymentsService } from '../../../core/payments/service/payments.service';
-import { PaymentMethod } from '@prisma/client';
+import type { StkPushResponse } from '../service/payments.service'; 
 
 @Controller('payments')
 export class PaymentsController {
   constructor(private readonly service: PaymentsService) {}
 
   @UseGuards(JwtAuthGuard)
-  @Post('initiate')
-  initiate(
+  @Post('stk-push')
+  stkPush(
     @Req() req: AuthRequest,
-    @Body() dto: { bookingId: string; method: PaymentMethod; phone?: string },
-  ) {
-    return this.service.initiate(req.user, dto);
+    @Body() dto: { bookingId: string; phone: string },
+  ): Promise<StkPushResponse> {
+    return this.service.stkPush(req.user, dto);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post(':id/simulate-success')
-  simulateSuccess(@Req() req: AuthRequest, @Param('id') id: string) {
-    return this.service.simulateSuccess(req.user, id);
+  @Post(':id/handleKcbCallback')
+  handleKcbCallback(@Body() payload: any) {
+    return this.service.handleKcbCallback(payload);
   }
 
   @UseGuards(JwtAuthGuard)
