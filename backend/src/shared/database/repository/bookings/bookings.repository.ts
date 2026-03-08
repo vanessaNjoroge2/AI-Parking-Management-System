@@ -123,4 +123,16 @@ export class BookingsRepository {
       },
     });
   }
+  getLotWithActivePricing(parkingLotId: string) {
+    return this.db.parkingLot.findUnique({
+      where: { id: parkingLotId },
+      include: {
+        pricingRules: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+  }
 }

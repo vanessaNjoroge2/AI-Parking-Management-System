@@ -37,7 +37,11 @@ export class ParkingLotsRepository {
     return this.db.parkingLot.findUnique({
       where: { id },
       include: {
-        pricingRules: { where: { isActive: true } },
+        pricingRules: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
         workingHours: true,
         photos: true,
         reviews: true,
@@ -77,18 +81,47 @@ export class ParkingLotsRepository {
     );
   }
 
-  createPricingRule(
+  async setPricingRule(
     parkingLotId: string,
     type: PricingType,
     amount: number,
     currency = 'KES',
   ) {
-    return this.db.pricingRule.create({
-      data: { parkingLotId, type, amount, currency, isActive: true },
+    return this.db.$transaction(async (tx) => {
+      await tx.pricingRule.updateMany({
+        where: {
+          parkingLotId,
+          isActive: true,
+        },
+        data: {
+          isActive: false,
+        },
+      });
+
+      return tx.pricingRule.create({
+        data: {
+          parkingLotId,
+          type,
+          amount,
+          currency,
+          isActive: true,
+        },
+      });
     });
   }
 
-  // simple nearby search (we’ll improve later). Uses bounding box filter.
+  getActivePricingRule(parkingLotId: string) {
+    return this.db.pricingRule.findFirst({
+      where: {
+        parkingLotId,
+        isActive: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
   searchNearby(lat: number, lng: number, radiusKm: number) {
     const latDelta = radiusKm / 110.574;
     const lngDelta = radiusKm / (111.32 * Math.cos((lat * Math.PI) / 180));
@@ -105,7 +138,11 @@ export class ParkingLotsRepository {
         longitude: { gte: minLng, lte: maxLng },
       },
       include: {
-        pricingRules: { where: { isActive: true } },
+        pricingRules: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
         photos: true,
       },
       orderBy: { createdAt: 'desc' },

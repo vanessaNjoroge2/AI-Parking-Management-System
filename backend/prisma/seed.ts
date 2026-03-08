@@ -216,7 +216,7 @@ async function main() {
       data: {
         parkingLotId: lot.id,
         type: PricingType.HOURLY,
-        amount: 200,
+        amount: 50,
       },
     });
   }
