@@ -13,6 +13,7 @@ import { JwtAuthGuard } from '../../../shared/guards/jwt/jwt-auth.guard';
 import type { AuthRequest } from '../../../shared/interfaces/authrequest.interface';
 import { BookingsService } from '../service/bookings.service';
 import { CreateBookingDto } from '../dto/create-booking.dto';
+import { EstimateBookingDto } from '../dto/estimate-booking.dto';
 
 @Controller('bookings')
 export class BookingsController {
@@ -30,6 +31,7 @@ export class BookingsController {
     return this.service.myBookings(req.user);
   }
 
+<<<<<<< HEAD
   @UseGuards(JwtAuthGuard)
   @Get('my/:id')
   myById(@Req() req: AuthRequest, @Param('id') id: string) {
@@ -42,6 +44,12 @@ export class BookingsController {
     return this.service.cancelMyBooking(req.user, id);
   }
 
+=======
+  @Post('estimate')
+  estimate(@Body() dto: EstimateBookingDto) {
+    return this.service.estimate(dto);
+  }
+>>>>>>> refs/remotes/origin/main
   // ✅ OWNER: Today’s bookings (optional: ?date=2026-02-25)
   @UseGuards(JwtAuthGuard)
   @Get('owner')

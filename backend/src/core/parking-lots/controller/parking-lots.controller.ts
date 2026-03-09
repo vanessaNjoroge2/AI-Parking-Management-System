@@ -86,4 +86,9 @@ export class ParkingLotsController {
   details(@Param('id') id: string) {
     return this.service.details(id);
   }
+
+  @Get(':id/pricing')
+  getPricing(@Param('id') id: string) {
+    return this.service.getPricing(id);
+  }
 }

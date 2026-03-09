@@ -86,7 +86,7 @@ export class ParkingLotsService {
     if (owner.role !== UserRole.ADMIN && lot.ownerId !== owner.userId) {
       throw new ForbiddenException('Not your parking lot');
     }
-    return this.repo.createPricingRule(
+    return this.repo.setPricingRule(
       parkingLotId,
       dto.type,
       dto.amount,
@@ -102,5 +102,19 @@ export class ParkingLotsService {
     const lot = await this.repo.findById(id);
     if (!lot) throw new NotFoundException('Parking lot not found');
     return lot;
+  }
+
+  async getPricing(id: string) {
+    const lot = await this.repo.findById(id);
+    if (!lot) throw new NotFoundException('Parking lot not found');
+
+    const pricing = await this.repo.getActivePricingRule(id);
+    if (!pricing) {
+      throw new NotFoundException(
+        'No active pricing found for this parking lot',
+      );
+    }
+
+    return pricing;
   }
 }
