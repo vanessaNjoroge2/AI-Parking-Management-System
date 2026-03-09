@@ -5,6 +5,11 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { NormalizedParkingLot } from '../../services/parkingLots';
 import { createBooking } from '../../services/bookings';
+import {
+  fetchPaymentStatusByReference,
+  initiateMpesaPayment,
+  simulateFrontendPayment,
+} from '../../services/payments';
 
 interface BookingDetails {
   date: string;
@@ -24,6 +29,15 @@ export function Payment() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [paymentReference, setPaymentReference] = useState('');
+  const [paymentMessage, setPaymentMessage] = useState('');
+
+  const paymentMethodLabel =
+    paymentMethod === 'mpesa'
+      ? 'M-Pesa'
+      : paymentMethod === 'card'
+      ? 'Card'
+      : 'Wallet';
 
   // Redirect if missing data
   if (!lot || !bookingDetails) {
@@ -46,6 +60,7 @@ export function Payment() {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
+    setPaymentMessage('');
 
     try {
       const booking = await createBooking({
@@ -56,13 +71,72 @@ export function Payment() {
         numberOfCars: 1,
       });
 
+      if (paymentMethod !== 'mpesa') {
+        const simulatedPayment = await simulateFrontendPayment({
+          amount: bookingDetails.totalCost,
+          method: paymentMethod,
+        });
+
+        setPaymentReference(simulatedPayment.reference);
+        setPaymentMessage(`${simulatedPayment.methodLabel} payment approved successfully.`);
+
+        navigate('/booking-confirmation', {
+          state: {
+            lot,
+            bookingDetails,
+            bookingId: booking.id,
+            bookingStatus: booking.status,
+            paymentMethod,
+            paymentReference: simulatedPayment.reference,
+            paymentAmount: simulatedPayment.amount,
+            paymentMethodLabel: simulatedPayment.methodLabel,
+            isSimulatedPayment: true,
+          },
+        });
+        return;
+      }
+
+      const payment = await initiateMpesaPayment({
+        bookingId: booking.id,
+        phone: phoneNumber,
+      });
+
+      setPaymentReference(payment.reference);
+      setPaymentMessage('Payment prompt sent to your phone. Waiting for confirmation...');
+
+      let attempts = 0;
+      let latestStatus = 'INITIATED';
+      let latestPayment: Awaited<ReturnType<typeof fetchPaymentStatusByReference>> | null = null;
+
+      while (attempts < 12 && latestStatus === 'INITIATED') {
+        await new Promise((resolve) => setTimeout(resolve, 2500));
+        latestPayment = await fetchPaymentStatusByReference(payment.reference);
+        latestStatus = latestPayment.status;
+        attempts += 1;
+      }
+
+      if (!latestPayment) {
+        throw new Error('Unable to verify payment status. Please check your booking history.');
+      }
+
+      if (latestPayment.status !== 'SUCCESS') {
+        throw new Error(
+          latestPayment.status === 'FAILED'
+            ? 'Payment failed. Please try again.'
+            : 'Payment is still pending. Please check your phone and booking history.',
+        );
+      }
+
       navigate('/booking-confirmation', {
         state: {
           lot,
           bookingDetails,
           bookingId: booking.id,
-          bookingStatus: booking.status,
+          bookingStatus: 'CONFIRMED',
           paymentMethod,
+          paymentReference: payment.reference,
+          paymentAmount: latestPayment.amount,
+          paymentMethodLabel,
         },
       });
     } catch (err) {
@@ -134,7 +208,7 @@ export function Payment() {
                   </div>
                   <div className="flex-1 text-left">
                     <p className="font-semibold text-slate-900">Debit / Credit Card</p>
-                    <p className="text-xs text-slate-500">Secure Visa/Mastercard processing</p>
+                    <p className="text-xs text-slate-500">Demo success flow enabled</p>
                   </div>
                   <div className={`w-5 h-5 rounded-full border-2 ${paymentMethod === 'card'
                     ? 'border-blue-600 bg-blue-600'
@@ -159,7 +233,7 @@ export function Payment() {
                   </div>
                   <div className="flex-1 text-left">
                     <p className="font-semibold text-slate-900">ParkSmart Wallet</p>
-                    <p className="text-xs text-slate-500">Available: KES 1,250.00</p>
+                    <p className="text-xs text-slate-500">Demo success flow enabled</p>
                   </div>
                   <div className={`w-5 h-5 rounded-full border-2 ${paymentMethod === 'wallet'
                     ? 'border-blue-600 bg-blue-600'
@@ -225,16 +299,29 @@ export function Payment() {
                 </div>
               )}
 
+              {paymentMessage && (
+                <div className="p-3 bg-blue-50 border border-blue-100 rounded-md mb-6">
+                  <p className="text-sm text-blue-700 text-center">{paymentMessage}</p>
+                  {paymentReference && (
+                    <p className="text-[11px] text-blue-500 text-center mt-1 font-mono">
+                      Ref: {paymentReference}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <Button
                 type="submit"
                 className="w-full h-14 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold shadow-blue-600/10 shadow-lg transition-all"
                 disabled={(paymentMethod === 'mpesa' && !phoneNumber) || isSubmitting}
               >
                 {isSubmitting
-                  ? 'Verifying Transaction...'
+                  ? paymentMethod === 'mpesa'
+                    ? 'Verifying Transaction...'
+                    : `Processing ${paymentMethodLabel}...`
                   : paymentMethod === 'mpesa'
                   ? 'Initiate M-Pesa Payment'
-                  : 'Complete Booking'}
+                  : `Pay with ${paymentMethodLabel}`}
               </Button>
 
               <p className="text-center text-xs text-slate-400 mt-4 tracking-tight">

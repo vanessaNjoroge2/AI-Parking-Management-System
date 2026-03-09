@@ -1,30 +1,99 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowLeft, TrendingUp, DollarSign } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { fetchOwnerBookings, type OwnerBookingRecord } from '../../services/ownerBookings';
+import { getOwnerParkingLots, type ParkingLot } from '../../services/parkingLots';
+import { eachDayOfInterval, endOfDay, format, startOfDay, subDays } from 'date-fns';
 
 export function Analytics() {
   const navigate = useNavigate();
+  const [bookings, setBookings] = useState<OwnerBookingRecord[]>([]);
+  const [lots, setLots] = useState<ParkingLot[]>([]);
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const revenueData = [
-    { day: 'Mon', revenue: 1200 },
-    { day: 'Tue', revenue: 1800 },
-    { day: 'Wed', revenue: 1500 },
-    { day: 'Thu', revenue: 2200 },
-    { day: 'Fri', revenue: 2800 },
-    { day: 'Sat', revenue: 3200 },
-    { day: 'Sun', revenue: 2400 },
-  ];
+  useEffect(() => {
+    const load = async () => {
+      setIsLoading(true);
+      setError('');
+      try {
+        const days = eachDayOfInterval({
+          start: startOfDay(subDays(new Date(), 6)),
+          end: startOfDay(new Date()),
+        });
 
-  const bookingsData = [
-    { day: 'Mon', bookings: 15 },
-    { day: 'Tue', bookings: 22 },
-    { day: 'Wed', bookings: 18 },
-    { day: 'Thu', bookings: 28 },
-    { day: 'Fri', bookings: 35 },
-    { day: 'Sat', bookings: 40 },
-    { day: 'Sun', bookings: 30 },
-  ];
+        const [fetchedLots, bookingsByDay] = await Promise.all([
+          getOwnerParkingLots(),
+          Promise.all(days.map((day) => fetchOwnerBookings(format(day, 'yyyy-MM-dd')))),
+        ]);
+
+  setBookings(bookingsByDay.flat());
+        setLots(fetchedLots);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unable to load analytics');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  const last7Days = useMemo(
+    () => eachDayOfInterval({ start: startOfDay(subDays(new Date(), 6)), end: startOfDay(new Date()) }),
+    [],
+  );
+
+  const revenueData = useMemo(
+    () =>
+      last7Days.map((day) => {
+        const key = format(day, 'yyyy-MM-dd');
+        const dayBookings = bookings.filter(
+          (booking) => format(new Date(booking.startTime), 'yyyy-MM-dd') === key,
+        );
+        return {
+          day: format(day, 'EEE'),
+          revenue: dayBookings.reduce((sum, booking) => sum + (booking.payment?.amount ?? 0), 0),
+        };
+      }),
+    [bookings, last7Days],
+  );
+
+  const bookingsData = useMemo(
+    () =>
+      last7Days.map((day) => {
+        const key = format(day, 'yyyy-MM-dd');
+        const dayBookings = bookings.filter(
+          (booking) => format(new Date(booking.startTime), 'yyyy-MM-dd') === key,
+        );
+        return {
+          day: format(day, 'EEE'),
+          bookings: dayBookings.length,
+        };
+      }),
+    [bookings, last7Days],
+  );
+
+  const totalRevenue = useMemo(
+    () => bookings.reduce((sum, booking) => sum + (booking.payment?.amount ?? 0), 0),
+    [bookings],
+  );
+
+  const occupancyByLocation = useMemo(
+    () =>
+      lots.map((lot) => {
+        const occupied = lot.occupiedSpots ?? 0;
+        const rate = lot.capacityTotal > 0 ? Math.round((occupied / lot.capacityTotal) * 100) : 0;
+        return {
+          name: lot.name,
+          rate,
+          color:
+            rate >= 80 ? 'bg-warning' : rate >= 50 ? 'bg-primary' : 'bg-accent',
+        };
+      }),
+    [lots],
+  );
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8 flex justify-center">
@@ -44,12 +113,16 @@ export function Analytics() {
         </div>
 
         <div className="space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-100 rounded-xl p-4 text-red-600 text-sm">{error}</div>
+          )}
+
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-gradient-to-br from-accent to-accent/90 rounded-3xl p-6 md:p-8 text-white shadow-lg flex items-center justify-between">
               <div>
                 <p className="text-white/80 font-medium mb-1">Total Revenue</p>
-                <p className="text-4xl font-bold">$15,100</p>
+                <p className="text-4xl font-bold">KES {totalRevenue.toLocaleString()}</p>
               </div>
               <div className="p-4 bg-white/10 rounded-2xl">
                 <DollarSign className="w-10 h-10 text-white" />
@@ -58,7 +131,7 @@ export function Analytics() {
             <div className="bg-gradient-to-br from-primary to-primary/90 rounded-3xl p-6 md:p-8 text-white shadow-lg flex items-center justify-between">
               <div>
                 <p className="text-white/80 font-medium mb-1">Total Bookings</p>
-                <p className="text-4xl font-bold">188</p>
+                <p className="text-4xl font-bold">{bookings.length}</p>
               </div>
               <div className="p-4 bg-white/10 rounded-2xl">
                 <TrendingUp className="w-10 h-10 text-white" />
@@ -87,7 +160,7 @@ export function Analytics() {
                       fontSize={12}
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(value) => `$${value}`}
+                      tickFormatter={(value) => `KES ${value}`}
                     />
                     <Bar
                       dataKey="revenue"
@@ -137,11 +210,8 @@ export function Analytics() {
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-border/50">
             <h3 className="text-lg font-semibold mb-6">Occupancy Rate by Location</h3>
             <div className="space-y-6">
-              {[
-                { name: 'Downtown Plaza', rate: 78, color: 'bg-accent' },
-                { name: 'City Mall', rate: 64, color: 'bg-primary' },
-                { name: 'Airport Terminal', rate: 100, color: 'bg-warning' },
-              ].map((lot, index) => (
+              {isLoading && <p className="text-sm text-slate-400">Loading occupancy...</p>}
+              {!isLoading && occupancyByLocation.map((lot, index) => (
                 <div key={index}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-foreground">{lot.name}</span>

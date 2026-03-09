@@ -76,10 +76,10 @@ export function OwnerLogin() {
         <div className="flex-1 flex flex-col px-6 py-10 max-w-[390px] mx-auto w-full">
           <div className="text-left mb-8">
             <h2 className="text-2xl font-semibold text-slate-900 mb-2">
-              {isSignUp ? 'Facility Registration' : 'Partner Dashboard'}
+              {isSignUp ? 'Create owner account' : 'Owner sign in'}
             </h2>
             <p className="text-slate-500 text-sm">
-              {isSignUp ? 'Register your parking facility to the network' : 'Secure access for facility partners'}
+              {isSignUp ? 'Set up your account to manage parking lots and bookings.' : 'Access your parking operations dashboard.'}
             </p>
           </div>
 
@@ -91,7 +91,7 @@ export function OwnerLogin() {
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <Input
                     type="text"
-                    placeholder="Manager Name"
+                    placeholder="Full name"
                     className="pl-11 h-12 bg-slate-50 rounded-md border-slate-200"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
@@ -158,20 +158,20 @@ export function OwnerLogin() {
               className="h-12 rounded-md bg-blue-600 hover:bg-blue-700 text-white mt-4 font-semibold shadow-blue-600/10 shadow-lg"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Authenticating...' : isSignUp ? 'Register Facility' : 'Enter Dashboard'}
+              {isSubmitting ? 'Authenticating...' : isSignUp ? 'Create account' : 'Sign in'}
             </Button>
           </form>
 
           {/* Toggle Sign In/Up */}
           <div className="text-center mb-10">
             <span className="text-slate-500 text-sm">
-              {isSignUp ? 'Already a partner? ' : 'New parking lot manager? '}
+              {isSignUp ? 'Already have an account? ' : 'Need owner access? '}
             </span>
             <button
               onClick={() => setIsSignUp(!isSignUp)}
               className="text-blue-600 font-semibold text-sm hover:underline"
             >
-              {isSignUp ? 'Sign In' : 'Join Partner Network'}
+              {isSignUp ? 'Sign in' : 'Create an account'}
             </button>
           </div>
 

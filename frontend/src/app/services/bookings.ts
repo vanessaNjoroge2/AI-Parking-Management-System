@@ -21,6 +21,7 @@ export interface BookingPayment {
   currency: string;
   status: string;
   method: string;
+  reference?: string;
 }
 
 export interface BookingRecord {
@@ -50,9 +51,19 @@ export async function fetchMyBookings() {
   return apiFetch<BookingRecord[]>('/bookings/my');
 }
 
+export async function fetchMyBookingById(id: string) {
+  return apiFetch<BookingRecord>(`/bookings/my/${id}`);
+}
+
 export async function createBooking(payload: CreateBookingPayload) {
   return apiFetch<BookingRecord>('/bookings', {
     method: 'POST',
     body: JSON.stringify(payload),
+  });
+}
+
+export async function cancelMyBooking(id: string) {
+  return apiFetch<BookingRecord>(`/bookings/my/${id}/cancel`, {
+    method: 'PATCH',
   });
 }

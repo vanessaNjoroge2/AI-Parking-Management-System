@@ -110,13 +110,13 @@ export function LotDetails() {
       return { occupied: capacity, available: 0, percent: 100, status: 'Closed', color: 'bg-rose-500' };
     }
 
-    let seed = 0;
-    for (const char of lot.id) {
-      seed = (seed + char.charCodeAt(0)) % 100;
-    }
-    const occupancyPercent = 20 + (seed % 60); // 20% - 79%
-    const occupied = Math.min(capacity, Math.max(1, Math.round((occupancyPercent / 100) * capacity)));
-    const available = Math.max(capacity - occupied, 0);
+    const occupied = Math.min(capacity, Math.max(lot.occupiedSpots ?? 0, 0));
+    const available = Math.max(
+      typeof lot.availableSpots === 'number'
+        ? lot.availableSpots
+        : capacity - occupied,
+      0,
+    );
     const percent = (occupied / capacity) * 100;
     const availabilityRatio = available / capacity;
 

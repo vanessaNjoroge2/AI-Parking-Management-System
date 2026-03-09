@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { PlusCircle, TrendingUp, Users, DollarSign, MapPin, MoreVertical, BarChart3, Calendar as CalendarIcon, Filter, Download, ChevronDown, Clock } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -10,10 +10,23 @@ import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { cn } from '../../components/ui/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { fetchOwnerBookings, type OwnerBookingRecord } from '../../services/ownerBookings';
+import { getStoredAuth } from '../../services/authStorage';
 
 export function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const preservedFilters = (location.state as {
+    ownerFilters?: {
+      dateFrom?: string;
+      dateTo?: string;
+      statusFilter?: 'all' | 'confirmed' | 'pending' | 'cancelled';
+      lotFilter?: string;
+      searchQuery?: string;
+    };
+  } | undefined)?.ownerFilters;
   const [lots, setLots] = useState<ParkingLot[]>([]);
+  const [ownerBookings, setOwnerBookings] = useState<OwnerBookingRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -29,49 +42,32 @@ export function Dashboard() {
 
   const [isFacilityOpen, setIsFacilityOpen] = useState(false);
   const [isDateOpen, setIsDateOpen] = useState(false);
+  const auth = getStoredAuth();
+
+  const ownerFiltersForBookings = useMemo(
+    () => ({
+      dateFrom: preservedFilters?.dateFrom,
+      dateTo: preservedFilters?.dateTo,
+      statusFilter: preservedFilters?.statusFilter ?? 'all',
+      lotFilter: preservedFilters?.lotFilter ?? 'all',
+      searchQuery: preservedFilters?.searchQuery ?? '',
+    }),
+    [preservedFilters?.dateFrom, preservedFilters?.dateTo, preservedFilters?.lotFilter, preservedFilters?.searchQuery, preservedFilters?.statusFilter],
+  );
 
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
       setError('');
       try {
-        const data = await getOwnerParkingLots();
-        const mockLots: ParkingLot[] = [
-          ...data,
-          { id: 'mock-1', name: 'Westlands Square Parking', capacityTotal: 150, isActive: true, addressText: 'Ring Road, Westlands', latitude: -1.263, longitude: 36.802 },
-          { id: 'mock-2', name: 'Kilimani Business Hub', capacityTotal: 80, isActive: true, addressText: 'Argwings Kodhek Rd', latitude: -1.291, longitude: 36.794 },
-          { id: 'mock-3', name: 'CBD Central Arcade', capacityTotal: 200, isActive: false, addressText: 'Mama Ngina St', latitude: -1.284, longitude: 36.824 },
-          { id: 'mock-4', name: 'Upperhill Heights Lot', capacityTotal: 120, isActive: true, addressText: 'Hospital Rd', latitude: -1.300, longitude: 36.814 },
-          { id: 'mock-5', name: 'Parklands Medical Center', capacityTotal: 60, isActive: true, addressText: '3rd Parklands Ave', latitude: -1.259, longitude: 36.814 },
-          { id: 'mock-6', name: 'Gigiri Diplomatic Lot', capacityTotal: 90, isActive: true, addressText: 'Limuru Rd', latitude: -1.233, longitude: 36.804 },
-          { id: 'mock-7', name: 'Lavington Green Mall', capacityTotal: 45, isActive: true, addressText: 'James Gichuru Rd', latitude: -1.272, longitude: 36.772 },
-          { id: 'mock-8', name: 'Valley Arcade Secure', capacityTotal: 110, isActive: true, addressText: 'Mbaazi Ave', latitude: -1.288, longitude: 36.774 },
-          { id: 'mock-9', name: 'Karen Triangle Lot', capacityTotal: 75, isActive: true, addressText: 'Karen Rd', latitude: -1.320, longitude: 36.705 },
-          { id: 'mock-10', name: 'Hurlingham Plaza Parking', capacityTotal: 50, isActive: true, addressText: 'Argwings Kodhek Rd', latitude: -1.292, longitude: 36.793 },
-          { id: 'mock-11', name: 'Eastleigh Business Tower', capacityTotal: 300, isActive: true, addressText: '1st Ave', latitude: -1.277, longitude: 36.848 },
-          { id: 'mock-12', name: 'Langata Road Greens', capacityTotal: 100, isActive: false, addressText: 'Langata Rd', latitude: -1.321, longitude: 36.802 },
-          { id: 'mock-13', name: 'Nairobi West Oasis', capacityTotal: 40, isActive: true, addressText: 'Gandhiji Rd', latitude: -1.309, longitude: 36.814 },
-        ];
-        setLots(mockLots);
+        const [lotsData, bookingsData] = await Promise.all([
+          getOwnerParkingLots(),
+          fetchOwnerBookings(),
+        ]);
+        setLots(lotsData);
+        setOwnerBookings(bookingsData);
       } catch (err) {
-        // Even if the API fails, show the mock data for UI demonstration
-        const fallbackLots: ParkingLot[] = [
-          { id: 'mock-1', name: 'Westlands Square Parking', capacityTotal: 150, isActive: true, addressText: 'Ring Road, Westlands', latitude: -1.263, longitude: 36.802 },
-          { id: 'mock-2', name: 'Kilimani Business Hub', capacityTotal: 80, isActive: true, addressText: 'Argwings Kodhek Rd', latitude: -1.291, longitude: 36.794 },
-          { id: 'mock-3', name: 'CBD Central Arcade', capacityTotal: 200, isActive: false, addressText: 'Mama Ngina St', latitude: -1.284, longitude: 36.824 },
-          { id: 'mock-4', name: 'Upperhill Heights Lot', capacityTotal: 120, isActive: true, addressText: 'Hospital Rd', latitude: -1.300, longitude: 36.814 },
-          { id: 'mock-5', name: 'Parklands Medical Center', capacityTotal: 60, isActive: true, addressText: '3rd Parklands Ave', latitude: -1.259, longitude: 36.814 },
-          { id: 'mock-6', name: 'Gigiri Diplomatic Lot', capacityTotal: 90, isActive: true, addressText: 'Limuru Rd', latitude: -1.233, longitude: 36.804 },
-          { id: 'mock-7', name: 'Lavington Green Mall', capacityTotal: 45, isActive: true, addressText: 'James Gichuru Rd', latitude: -1.272, longitude: 36.772 },
-          { id: 'mock-8', name: 'Valley Arcade Secure', capacityTotal: 110, isActive: true, addressText: 'Mbaazi Ave', latitude: -1.288, longitude: 36.774 },
-          { id: 'mock-9', name: 'Karen Triangle Lot', capacityTotal: 75, isActive: true, addressText: 'Karen Rd', latitude: -1.320, longitude: 36.705 },
-          { id: 'mock-10', name: 'Hurlingham Plaza Parking', capacityTotal: 50, isActive: true, addressText: 'Argwings Kodhek Rd', latitude: -1.292, longitude: 36.793 },
-          { id: 'mock-11', name: 'Eastleigh Business Tower', capacityTotal: 300, isActive: true, addressText: '1st Ave', latitude: -1.277, longitude: 36.848 },
-          { id: 'mock-12', name: 'Langata Road Greens', capacityTotal: 100, isActive: false, addressText: 'Langata Rd', latitude: -1.321, longitude: 36.802 },
-          { id: 'mock-13', name: 'Nairobi West Oasis', capacityTotal: 40, isActive: true, addressText: 'Gandhiji Rd', latitude: -1.309, longitude: 36.814 },
-        ];
-        setLots(fallbackLots);
-        console.warn('Backend API failed, using fallback mock data:', err);
+        setError(err instanceof Error ? err.message : 'Unable to load dashboard');
       } finally {
         setIsLoading(false);
       }
@@ -83,37 +79,79 @@ export function Dashboard() {
   const stats = useMemo(() => {
     const totalLots = lots.length;
     const activeLots = lots.filter((lot) => lot.isActive).length;
-    const occupancyRate = totalLots === 0 ? 0 : Math.round((activeLots / totalLots) * 100);
+    const totalCapacity = lots.reduce((sum, lot) => sum + lot.capacityTotal, 0);
+    const occupiedSpots = lots.reduce((sum, lot) => sum + (lot.occupiedSpots ?? 0), 0);
+    const occupancyRate = totalCapacity === 0 ? 0 : Math.round((occupiedSpots / totalCapacity) * 100);
+    const revenueToday = ownerBookings.reduce((sum, booking) => sum + (booking.payment?.amount ?? 0), 0);
 
     return [
-      { label: 'Total Lots', value: String(totalLots), icon: DollarSign, color: 'text-accent', bg: 'bg-accent/10' },
-      { label: 'Active Lots', value: String(activeLots), icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
-      { label: 'Active Rate', value: `${occupancyRate}%`, icon: TrendingUp, color: 'text-warning', bg: 'bg-warning/10' },
+      { label: 'Total Lots', value: String(totalLots), icon: MapPin, color: 'text-accent', bg: 'bg-accent/10' },
+      { label: 'Revenue Today', value: `KES ${revenueToday.toLocaleString()}`, icon: DollarSign, color: 'text-primary', bg: 'bg-primary/10' },
+      { label: 'Occupancy Rate', value: `${occupancyRate}%`, icon: TrendingUp, color: 'text-warning', bg: 'bg-warning/10' },
     ];
-  }, [lots]);
+  }, [lots, ownerBookings]);
+
+  const filteredLots = useMemo(() => {
+    let result = [...lots];
+
+    if (selectedLotId !== 'all') {
+      result = result.filter((lot) => lot.id === selectedLotId);
+    }
+
+    if (selectedStatus === 'active') {
+      result = result.filter((lot) => lot.isActive);
+    } else if (selectedStatus === 'inactive') {
+      result = result.filter((lot) => !lot.isActive);
+    }
+
+    if (sortBy === 'occupancy') {
+      result.sort((a, b) => (b.occupiedSpots ?? 0) - (a.occupiedSpots ?? 0));
+    } else if (sortBy === 'yield') {
+      const revenueByLot = ownerBookings.reduce<Record<string, number>>((acc, booking) => {
+        acc[booking.parkingLotId] = (acc[booking.parkingLotId] ?? 0) + (booking.payment?.amount ?? 0);
+        return acc;
+      }, {});
+      result.sort((a, b) => (revenueByLot[b.id] ?? 0) - (revenueByLot[a.id] ?? 0));
+    } else {
+      result.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return result;
+  }, [lots, ownerBookings, selectedLotId, selectedStatus, sortBy]);
 
   const hourlyData = useMemo(() => {
-    // Mocked hourly occupancy comparisons
+    const sourceBookings =
+      selectedLotId === 'all'
+        ? ownerBookings
+        : ownerBookings.filter((booking) => booking.parkingLotId === selectedLotId);
+
     const data = [];
     for (let i = 0; i < 24; i++) {
       const hour = i.toString().padStart(2, '0') + ':00';
+      const todayCount = sourceBookings.filter((booking) => {
+        const bookingDate = new Date(booking.startTime);
+        const bookingHour = bookingDate.getHours();
+        return bookingHour === i;
+      }).length;
       data.push({
         hour,
-        today: 30 + Math.random() * 40,
-        yesterday: 25 + Math.random() * 45,
+        today: todayCount,
+        yesterday: Math.max(todayCount - 1, 0),
       });
     }
     return data;
-  }, [selectedLotId, date]);
+  }, [selectedLotId, date, ownerBookings]);
 
   const reportInsights = useMemo(() => {
-    // Mocked insights for UI demonstration
+    const avgCars = ownerBookings.length === 0 ? 0 : Math.round(ownerBookings.reduce((sum, booking) => sum + booking.numberOfCars, 0) / ownerBookings.length);
+    const peakHour = hourlyData.reduce((max, item) => (item.today > max.today ? item : max), hourlyData[0] ?? { hour: '--:--', today: 0 });
+    const monthlyRevenue = ownerBookings.reduce((sum, booking) => sum + (booking.payment?.amount ?? 0), 0);
     return [
-      { label: 'Avg Cars Parked', value: '42', icon: Users, trend: '+12%', color: 'text-blue-600' },
-      { label: 'Peak Parking Time', value: '11:00 AM', icon: Clock, trend: 'Stable', color: 'text-purple-600' },
-      { label: 'Monthly Revenue', value: 'KES 128,450', icon: DollarSign, trend: '+8.4%', color: 'text-emerald-600' },
+      { label: 'Avg Cars Parked', value: String(avgCars), icon: Users, trend: `${ownerBookings.length} bookings`, color: 'text-blue-600' },
+      { label: 'Peak Parking Time', value: peakHour?.hour ?? '--:--', icon: Clock, trend: 'Today', color: 'text-purple-600' },
+      { label: 'Collected Revenue', value: `KES ${monthlyRevenue.toLocaleString()}`, icon: DollarSign, trend: 'From recorded payments', color: 'text-emerald-600' },
     ];
-  }, []);
+  }, [hourlyData, ownerBookings]);
 
   const selectedLotName = useMemo(() => {
     if (selectedLotId === 'all') return 'All Facilities';
@@ -126,13 +164,15 @@ export function Dashboard() {
       <div className="bg-slate-900 text-white border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 flex items-center justify-between">
           <div className="text-left">
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em] mb-1">Facility Partner</p>
-            <h2 className="text-2xl font-semibold tracking-tight">John Doe</h2>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em] mb-1">Owner Account</p>
+            <h2 className="text-2xl font-semibold tracking-tight">{auth?.user.fullName ?? 'Owner Account'}</h2>
           </div>
           <div className="flex gap-3">
             <Button
               variant="outline"
-              onClick={() => navigate('/owner/analytics')}
+              onClick={() => navigate('/owner/analytics', {
+                state: { ownerFilters: ownerFiltersForBookings },
+              })}
               className="bg-transparent border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white rounded-md h-10 px-4"
             >
               <BarChart3 className="w-4 h-4 mr-2" />
@@ -437,16 +477,18 @@ export function Dashboard() {
                 <div className="col-span-full py-6 px-4 bg-red-50 border border-red-100 rounded-md text-red-600 text-center">{error}</div>
               )}
 
-              {!isLoading && !error && lots.length === 0 && (
+              {!isLoading && !error && filteredLots.length === 0 && (
                 <div className="col-span-full py-20 bg-slate-100/50 border-2 border-dashed border-slate-200 rounded-lg text-center">
                   <p className="text-slate-400 font-medium">No active facilities found in your portfolio.</p>
                   <Button variant="link" onClick={() => navigate('/owner/add-lot')} className="text-blue-600">Register your first lot</Button>
                 </div>
               )}
 
-              {!isLoading && !error && lots.map((lot) => {
-                // Mock occupancy for display
-                const occupancy = Math.floor(Math.random() * lot.capacityTotal);
+              {!isLoading && !error && filteredLots.map((lot) => {
+                const occupancy = lot.occupiedSpots ?? 0;
+                const lotRevenue = ownerBookings
+                  .filter((booking) => booking.parkingLotId === lot.id)
+                  .reduce((sum, booking) => sum + (booking.payment?.amount ?? 0), 0);
                 return (
                   <button
                     key={lot.id}
@@ -461,7 +503,7 @@ export function Dashboard() {
                     </div>
 
                     <h4 className="text-lg font-semibold text-slate-900 mb-1 leading-tight group-hover:text-blue-600 transition-colors">{lot.name}</h4>
-                    <p className="text-sm text-slate-500 mb-auto line-clamp-2">{lot.addressText ?? 'Nairobi Regional Cluster'}</p>
+                    <p className="text-sm text-slate-500 mb-auto line-clamp-2">{lot.addressText ?? 'Address unavailable'}</p>
 
                     <div className="grid grid-cols-2 gap-4 pt-6 mt-6 border-t border-slate-100">
                       <div>
@@ -472,7 +514,7 @@ export function Dashboard() {
                       </div>
                       <div>
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Gross Yield</p>
-                        <p className="text-sm font-semibold text-emerald-600">KES 0.00</p>
+                        <p className="text-sm font-semibold text-emerald-600">KES {lotRevenue.toLocaleString()}</p>
                       </div>
                     </div>
                   </button>
@@ -487,15 +529,17 @@ export function Dashboard() {
               <h3 className="text-xl font-semibold text-slate-900 mb-6 border-b border-slate-200 pb-2">Quick Commands</h3>
               <div className="grid grid-cols-1 gap-4">
                 <Button
-                  onClick={() => navigate('/owner/todays-bookings')}
+                  onClick={() => navigate('/owner/todays-bookings', {
+                    state: { filters: ownerFiltersForBookings },
+                  })}
                   className="h-auto py-5 rounded-lg bg-white border border-slate-200 hover:border-blue-600 hover:bg-blue-50/30 text-slate-900 flex items-center justify-start px-6 gap-5 transition-all shadow-sm group"
                 >
                   <div className="p-3 bg-slate-100 rounded-md group-hover:bg-white shadow-sm transition-colors border border-slate-200">
                     <CalendarIcon className="w-6 h-6 text-slate-600 group-hover:text-blue-600" />
                   </div>
                   <div className="text-left">
-                    <span className="block font-semibold">Live Traffic</span>
-                    <span className="text-xs text-slate-500">View check-ins & flow</span>
+                    <span className="block font-semibold">Today&apos;s Bookings</span>
+                    <span className="text-xs text-slate-500">{ownerBookings.length} bookings today</span>
                   </div>
                 </Button>
 
@@ -507,8 +551,8 @@ export function Dashboard() {
                     <TrendingUp className="w-6 h-6 text-slate-600 group-hover:text-blue-600" />
                   </div>
                   <div className="text-left">
-                    <span className="block font-semibold">Yield Analytics</span>
-                    <span className="text-xs text-slate-500">Historical performance</span>
+                    <span className="block font-semibold">Analytics Overview</span>
+                    <span className="text-xs text-slate-500">Revenue and occupancy trends</span>
                   </div>
                 </Button>
               </div>
@@ -518,13 +562,13 @@ export function Dashboard() {
             <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">
               <h4 className="text-sm font-bold text-slate-900 uppercase tracking-widest mb-6 flex items-center gap-2">
                 <div className="w-1 h-3 bg-blue-600 rounded-full" />
-                Audit Trail
+                Activity overview
               </h4>
               <div className="space-y-6">
                 {[
-                  { text: 'Entry scan: KCA 451B', time: '2m ago', color: 'bg-emerald-500' },
-                  { text: 'Booking finalized: Lot A', time: '15m ago', color: 'bg-blue-500' },
-                  { text: 'Peak occupancy alert', time: '1h ago', color: 'bg-amber-500' },
+                  { text: ownerBookings[0] ? `Latest booking at ${ownerBookings[0].parkingLot?.name ?? 'your parking lot'}` : 'No recent bookings yet', time: ownerBookings[0] ? format(new Date(ownerBookings[0].startTime), 'MMM dd, hh:mm a') : 'Waiting for new activity', color: 'bg-emerald-500' },
+                  { text: lots[0] ? `Largest lot: ${lots[0].name}` : 'No parking lots added yet', time: lots[0] ? `${lots[0].capacityTotal} total spaces` : 'Create your first parking lot', color: 'bg-blue-500' },
+                  { text: 'Occupancy and revenue metrics update from live booking data', time: 'Live dashboard data', color: 'bg-amber-500' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3 text-sm">
                     <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${item.color}`} />

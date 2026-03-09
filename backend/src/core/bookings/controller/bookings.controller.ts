@@ -29,6 +29,19 @@ export class BookingsController {
   my(@Req() req: AuthRequest) {
     return this.service.myBookings(req.user);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('my/:id')
+  myById(@Req() req: AuthRequest, @Param('id') id: string) {
+    return this.service.myBookingById(req.user, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('my/:id/cancel')
+  cancelMyBooking(@Req() req: AuthRequest, @Param('id') id: string) {
+    return this.service.cancelMyBooking(req.user, id);
+  }
+
   // ✅ OWNER: Today’s bookings (optional: ?date=2026-02-25)
   @UseGuards(JwtAuthGuard)
   @Get('owner')

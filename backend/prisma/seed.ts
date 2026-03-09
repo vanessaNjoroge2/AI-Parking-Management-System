@@ -211,12 +211,25 @@ async function main() {
   console.log('✅ Working hours created');
 
   // ---- PRICING RULES ----
-  for (const lot of lots) {
+  const hourlyPrices = [
+    250, // CBD Secure Parking
+    180, // Westlands Mall Parking
+    150, // Karen Shopping Center
+    300, // Airport Parking Lot
+    220, // Nairobi CBD Secure Parking
+    350, // Upper Hill Executive Parking
+    170, // Parklands Secure Lot
+    100, // Thika Town Parking
+    120, // Blue Post Parking Lot
+    140, // Makongeni Secure Parking
+  ];
+
+  for (const [index, lot] of lots.entries()) {
     await prisma.pricingRule.create({
       data: {
         parkingLotId: lot.id,
         type: PricingType.HOURLY,
-        amount: 200,
+        amount: hourlyPrices[index] ?? 200,
       },
     });
   }

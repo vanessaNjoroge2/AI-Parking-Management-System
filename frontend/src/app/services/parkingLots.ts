@@ -47,9 +47,16 @@ export interface ParkingLot {
   hasLighting?: boolean | null;
   hasEvCharging?: boolean | null;
   allowedVehicleSizes?: ('compact' | 'standard' | 'large')[];
+  availableSpots?: number;
+  occupiedSpots?: number;
   pricingRules?: PricingRule[];
   workingHours?: WorkingHour[];
   photos?: ParkingPhoto[];
+  reviews?: Array<{
+    id: string;
+    rating: number;
+    comment?: string | null;
+  }>;
 }
 
 export interface NormalizedParkingLot extends ParkingLot {

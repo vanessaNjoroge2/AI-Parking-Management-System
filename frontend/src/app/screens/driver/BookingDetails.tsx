@@ -1,21 +1,72 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { ArrowLeft, MapPin, Calendar, Clock, Car } from 'lucide-react';
 import { StatusBadge } from '../../components/StatusBadge';
-import type { BookingRecord } from '../../services/bookings';
+import {
+  cancelMyBooking,
+  fetchMyBookingById,
+  type BookingRecord,
+} from '../../services/bookings';
 import { format } from 'date-fns';
 import { Button } from '../../components/ui/button';
 
 export function BookingDetails() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { booking } = (location.state as { booking?: BookingRecord }) || {};
+  const passedBooking = ((location.state as { booking?: BookingRecord }) || {}).booking;
   const [actionMessage, setActionMessage] = useState('');
+  const [booking, setBooking] = useState<BookingRecord | undefined>(passedBooking);
+  const [isLoading, setIsLoading] = useState(!passedBooking);
+  const [error, setError] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const bookingId = useMemo(() => {
+    if (passedBooking?.id) return passedBooking.id;
+    const params = new URLSearchParams(location.search);
+    return params.get('id') ?? undefined;
+  }, [location.search, passedBooking?.id]);
+
+  useEffect(() => {
+    if (!bookingId) return;
+    let isMounted = true;
+
+    const load = async () => {
+      setIsLoading(true);
+      setError('');
+      try {
+        const data = await fetchMyBookingById(bookingId);
+        if (isMounted) {
+          setBooking(data);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Unable to load booking');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, [bookingId]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center flex-col gap-4">
+        <p className="text-muted-foreground">Loading booking details...</p>
+      </div>
+    );
+  }
 
   if (!booking) {
     return (
       <div className="min-h-screen flex items-center justify-center flex-col gap-4">
-        <p className="text-muted-foreground">No booking selected.</p>
+        <p className="text-muted-foreground">{error || 'No booking selected.'}</p>
         <Button onClick={() => navigate('/booking-history')}>Back to History</Button>
       </div>
     );
@@ -35,12 +86,30 @@ export function BookingDetails() {
   const currency = booking.payment?.currency ?? 'KES';
   const bookingCode = `PKS-${booking.id.slice(0, 8).toUpperCase()}`;
 
-  const handleCancel = () => {
-    setActionMessage('Cancel request queued. We’ll notify you once it’s processed.');
+  const canCancel = ['PENDING', 'CONFIRMED'].includes(status);
+
+  const handleCancel = async () => {
+    if (!canCancel || isCancelling) return;
+    setIsCancelling(true);
+    setActionMessage('');
+    try {
+      const updated = await cancelMyBooking(booking.id);
+      setBooking(updated);
+      setActionMessage('Booking cancelled successfully.');
+    } catch (err) {
+      setActionMessage(err instanceof Error ? err.message : 'Unable to cancel booking');
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   const handleReschedule = () => {
-    setActionMessage('Reschedule coming soon. You’ll be able to pick a new time here.');
+    navigate('/booking-form', {
+      state: {
+        lot: booking.parkingLot,
+        booking,
+      },
+    });
   };
 
   return (
@@ -120,6 +189,7 @@ export function BookingDetails() {
                   variant="outline"
                   className="w-1/4"
                   onClick={handleReschedule}
+                  disabled={!booking.parkingLot?.id}
                 >
                   Reschedule Booking
                 </Button>
@@ -128,8 +198,9 @@ export function BookingDetails() {
                   variant="destructive"
                   className="w-1/4"
                   onClick={handleCancel}
+                  disabled={!canCancel || isCancelling}
                 >
-                  Cancel Booking
+                  {isCancelling ? 'Cancelling...' : 'Cancel Booking'}
                 </Button>
               </div>
 

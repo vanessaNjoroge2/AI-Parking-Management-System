@@ -106,23 +106,43 @@ export const router = createBrowserRouter([
 
       {
         path: '/owner/add-lot',
-        Component: AddEditLot,
+        element: (
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+            <AddEditLot />
+          </ProtectedRoute>
+        ),
       },
       {
         path: '/owner/edit-lot',
-        Component: AddEditLot,
+        element: (
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+            <AddEditLot />
+          </ProtectedRoute>
+        ),
       },
       {
         path: '/owner/todays-bookings',
-        Component: TodaysBookings,
+        element: (
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+            <TodaysBookings />
+          </ProtectedRoute>
+        ),
       },
       {
         path: '/owner/check-in-out',
-        Component: CheckInOut,
+        element: (
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+            <CheckInOut />
+          </ProtectedRoute>
+        ),
       },
       {
         path: '/owner/analytics',
-        Component: Analytics,
+        element: (
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+            <Analytics />
+          </ProtectedRoute>
+        ),
       },
     ],
   },

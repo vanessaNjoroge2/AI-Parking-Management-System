@@ -82,6 +82,31 @@ export class BookingsService {
   myBookings(user: { userId: string }) {
     return this.repo.findMyBookings(user.userId);
   }
+
+  async myBookingById(user: { userId: string }, bookingId: string) {
+    const booking = await this.repo.findMyBookingById(user.userId, bookingId);
+    if (!booking) throw new NotFoundException('Booking not found');
+    return booking;
+  }
+
+  async cancelMyBooking(user: { userId: string }, bookingId: string) {
+    const booking = await this.repo.findMyBookingById(user.userId, bookingId);
+    if (!booking) throw new NotFoundException('Booking not found');
+
+    if (
+      booking.status === BookingStatus.CANCELLED ||
+      booking.status === BookingStatus.COMPLETED ||
+      booking.status === BookingStatus.REFUNDED ||
+      booking.status === BookingStatus.EXPIRED
+    ) {
+      throw new BadRequestException(
+        `Booking cannot be cancelled when status is ${booking.status}`,
+      );
+    }
+
+    return this.repo.updateBookingStatus(bookingId, BookingStatus.CANCELLED);
+  }
+
   async ownerBookings(user: { userId: string; role: string }, date?: string) {
     if (user.role !== UserRole.OWNER && user.role !== UserRole.ADMIN) {
       throw new ForbiddenException('Only owners can view owner bookings');

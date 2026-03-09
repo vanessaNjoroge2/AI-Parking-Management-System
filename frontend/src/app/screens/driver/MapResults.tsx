@@ -14,6 +14,7 @@ import {
   normalizeParkingLot,
   ParkingLot,
   NormalizedParkingLot,
+  PricingType,
   searchParkingLots,
   ParkingPhoto,
 } from '../../services/parkingLots';
@@ -27,6 +28,7 @@ const getImageUrl = (photo?: ParkingPhoto) => {
 };
 
 const defaultCenter: [number, number] = [-1.2896, 36.8151];
+const LIVE_REFRESH_MS = 15000;
 
 function MapController({ center }: { center: [number, number] | null }) {
   const map = useMap();
@@ -49,6 +51,7 @@ export function MapResults() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
 
   const [mapCenter, setMapCenter] = useState<[number, number]>(defaultCenter);
   const [allLots, setAllLots] = useState<NormalizedParkingLot[]>([]);
@@ -61,33 +64,77 @@ export function MapResults() {
   });
 
   useEffect(() => {
-    const loadParking = async () => {
-      setIsLoadingData(true);
+    let cancelled = false;
+    let fallbackTimer: number | undefined;
+
+    const loadParking = async (showLoader = true) => {
+      if (showLoader) {
+        setIsLoadingData(true);
+      }
       setLoadError('');
       try {
-        const lots = await searchParkingLots(mapCenter[0], mapCenter[1], filters.radius / 1000);
+        const lots = await searchParkingLots(
+          mapCenter[0],
+          mapCenter[1],
+          filters.radius / 1000,
+        );
+        if (cancelled) return;
+
         const normalized = lots
           .map(normalizeParkingLot)
           .filter((lot) => Number.isFinite(lot.lat) && Number.isFinite(lot.lng));
+
         if (normalized.length === 0 && userLocation && !hasFallbackSearch) {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          setHasFallbackSearch(true);
-          setLoadError('No nearby lots found. Showing Nairobi results instead.');
-          setAllLots([]);
-          setMapCenter(defaultCenter);
-          setIsLoadingData(false);
+          fallbackTimer = window.setTimeout(() => {
+            if (cancelled) return;
+            setHasFallbackSearch(true);
+            setLoadError('No nearby lots found. Showing Nairobi results instead.');
+            setAllLots([]);
+            setMapCenter(defaultCenter);
+          }, 2000);
           return;
         }
+
         setAllLots(normalized);
+        setLastUpdatedAt(new Date());
       } catch (error) {
+        if (cancelled) return;
         setAllLots([]);
         setLoadError(error instanceof Error ? error.message : 'Failed to load parking lots');
+      } finally {
+        if (!cancelled) {
+          setIsLoadingData(false);
+        }
       }
-      setIsLoadingData(false);
     };
 
-    const timer = setTimeout(loadParking, 800);
-    return () => clearTimeout(timer);
+    const debounceTimer = window.setTimeout(() => {
+      void loadParking(true);
+    }, 500);
+
+    const intervalId = window.setInterval(() => {
+      if (!document.hidden) {
+        void loadParking(false);
+      }
+    }, LIVE_REFRESH_MS);
+
+    const handleVisibleRefresh = () => {
+      if (!document.hidden) {
+        void loadParking(false);
+      }
+    };
+
+    window.addEventListener('focus', handleVisibleRefresh);
+    document.addEventListener('visibilitychange', handleVisibleRefresh);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(debounceTimer);
+      if (fallbackTimer) window.clearTimeout(fallbackTimer);
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleVisibleRefresh);
+      document.removeEventListener('visibilitychange', handleVisibleRefresh);
+    };
   }, [mapCenter, filters.radius, userLocation, hasFallbackSearch]);
 
   const runSearch = async (query: string) => {
@@ -149,6 +196,35 @@ export function MapResults() {
   const getLotType = (lot: ParkingLot) => (lot.isCovered ? 'covered' : 'surface');
   const getLotAccess = (lot: ParkingLot) => (lot.isActive ? 'public' : 'private');
   const getLotFee = (lot: ParkingLot) => (getPrimaryPricing(lot).isFree ? 'no' : 'yes');
+  const getAvailableSpots = (lot: ParkingLot) =>
+    lot.availableSpots ?? Math.max(lot.capacityTotal - (lot.occupiedSpots ?? 0), 0);
+  const getOccupiedSpots = (lot: ParkingLot) =>
+    lot.occupiedSpots ?? Math.max(lot.capacityTotal - getAvailableSpots(lot), 0);
+  const getPricingSuffix = (type: PricingType) => {
+    switch (type) {
+      case 'DAILY':
+        return '/day';
+      case 'FLAT':
+        return '/flat';
+      default:
+        return '/hr';
+    }
+  };
+  const getReviewSummary = (lot: ParkingLot) => {
+    const reviews = lot.reviews ?? [];
+    if (reviews.length === 0) {
+      return { ratingLabel: 'New', reviewCountLabel: 'No reviews yet' };
+    }
+
+    const average =
+      reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) /
+      reviews.length;
+
+    return {
+      ratingLabel: average.toFixed(1),
+      reviewCountLabel: `${reviews.length} review${reviews.length === 1 ? '' : 's'}`,
+    };
+  };
 
   const visibleLots = useMemo(() => {
     return allLots.filter((lot) => {
@@ -170,6 +246,14 @@ export function MapResults() {
   };
 
   const selectedLot = useMemo(() => allLots.find(l => l.id === selectedLotId), [selectedLotId, allLots]);
+
+  const formatLiveTimestamp = (value: Date | null) => {
+    if (!value) return 'Waiting for live data…';
+    return `Updated ${value.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    })}`;
+  };
 
   return (
     <div className="h-[calc(100vh-64px)] w-full flex flex-col md:flex-row bg-background overflow-hidden relative">
@@ -260,6 +344,9 @@ export function MapResults() {
             <h2 className="text-xl font-bold">
               {isLoadingData ? 'Searching...' : `${visibleLots.length} Parking Lots`}
             </h2>
+            <span className="text-[11px] font-medium text-slate-400">
+              {formatLiveTimestamp(lastUpdatedAt)}
+            </span>
           </div>
 
           {!isLoadingData && visibleLots.length === 0 && (
@@ -285,6 +372,10 @@ export function MapResults() {
                   : 'border-border bg-card hover:border-blue-300'}
               `}
             >
+              {(() => {
+                const pricing = getPrimaryPricing(lot);
+                const { ratingLabel } = getReviewSummary(lot);
+                return (
               <div className="flex gap-4">
                 <div className="w-24 h-24 rounded-md overflow-hidden bg-slate-100 flex-shrink-0">
                   <img
@@ -298,16 +389,16 @@ export function MapResults() {
                     <h3 className="font-semibold text-lg text-foreground truncate pr-2">{lot.name}</h3>
                     <StatusBadge status={lot.isActive ? 'available' : 'full'}>
                       {lot.isActive
-                        ? <span><span className="text-blue-600 font-bold">{Math.floor(lot.capacityTotal * 0.4)}</span> / {lot.capacityTotal} Occupied</span>
+                        ? <span><span className="text-blue-600 font-bold">{getOccupiedSpots(lot)}</span> / {lot.capacityTotal} Occupied</span>
                         : `Full (0/${lot.capacityTotal})`}
                     </StatusBadge>
                   </div>
-                  <p className="text-xs text-slate-500 truncate mb-2">{lot.addressText || 'Nairobi, Kenya'}</p>
+                  <p className="text-xs text-slate-500 truncate mb-2">{lot.addressText || 'Address unavailable'}</p>
 
                   <div className="flex items-center gap-3 mb-3">
                     <div className="flex items-center gap-1 text-amber-500">
                       <Star className="w-3 h-3 fill-current" />
-                      <span className="text-xs font-bold">4.8</span>
+                      <span className="text-xs font-bold">{ratingLabel}</span>
                     </div>
                     <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
                       {getLotType(lot)}
@@ -316,12 +407,19 @@ export function MapResults() {
 
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-blue-600">
-                      KES {getPrimaryPricing(lot).amount}
-                      <span className="text-[10px] text-slate-400 font-normal">/hr</span>
+                      {pricing.isFree ? 'Free' : `${pricing.currency} ${pricing.amount}`}
+                      {!pricing.isFree && (
+                        <span className="text-[10px] text-slate-400 font-normal">{getPricingSuffix(pricing.type)}</span>
+                      )}
+                    </span>
+                    <span className="text-xs font-medium text-slate-500">
+                      {getAvailableSpots(lot)} spots free
                     </span>
                   </div>
                 </div>
               </div>
+                );
+              })()}
             </div>
           ))}
         </div>
@@ -372,6 +470,10 @@ export function MapResults() {
         {/* FIXED DETAIL CARD */}
         {selectedLot && (
           <div className="absolute bottom-6 left-6 right-6 md:left-auto md:w-[380px] z-[400] animate-in fade-in slide-in-from-bottom-4 duration-300">
+            {(() => {
+              const pricing = getPrimaryPricing(selectedLot);
+              const { ratingLabel, reviewCountLabel } = getReviewSummary(selectedLot);
+              return (
             <div className="bg-card rounded-lg shadow-2xl p-6 border border-border relative overflow-hidden group">
               <button
                 onClick={() => setSelectedLotId(null)}
@@ -395,12 +497,12 @@ export function MapResults() {
                   </div>
                   <div className="flex items-center gap-1 text-amber-500 mb-2">
                     <Star className="w-4 h-4 fill-current" />
-                    <span className="text-sm font-bold">4.8 (120 reviews)</span>
+                    <span className="text-sm font-bold">{ratingLabel} · {reviewCountLabel}</span>
                   </div>
                   <div className="flex gap-2">
-                    <StatusBadge status={selectedLot.isActive ? 'available' : 'full'}>
+                    <StatusBadge status={!selectedLot.isActive ? 'full' : getAvailableSpots(selectedLot) <= Math.max(1, Math.ceil(selectedLot.capacityTotal * 0.2)) ? 'low' : 'available'}>
                       {selectedLot.isActive
-                        ? <span><span className="text-blue-600 font-bold">{selectedLot.capacityTotal - Math.floor(selectedLot.capacityTotal * 0.2)}</span> / {selectedLot.capacityTotal} Occupied</span>
+                        ? <span><span className="text-blue-600 font-bold">{getOccupiedSpots(selectedLot)}</span> / {selectedLot.capacityTotal} Occupied</span>
                         : `Full (0/${selectedLot.capacityTotal})`}
                     </StatusBadge>
                   </div>
@@ -409,8 +511,10 @@ export function MapResults() {
 
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 <span className="font-bold text-xl text-foreground">
-                  KES {getPrimaryPricing(selectedLot).amount}
-                  <span className="text-xs text-slate-500 font-normal ml-0.5">/hr</span>
+                  {pricing.isFree ? 'Free' : `${pricing.currency} ${pricing.amount}`}
+                  {!pricing.isFree && (
+                    <span className="text-xs text-slate-500 font-normal ml-0.5">{getPricingSuffix(pricing.type)}</span>
+                  )}
                 </span>
                 <div className="h-4 w-px bg-border" />
                 <div className="flex flex-wrap gap-1.5">
@@ -460,6 +564,8 @@ export function MapResults() {
                 </Button>
               </div>
             </div>
+              );
+            })()}
           </div>
         )}
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { CheckCircle, MapPin, Calendar, Clock, Car, Download, Share2 } from 'lucide-react';
+import { CheckCircle, MapPin, Calendar, Clock, Car, Download, Share2, CreditCard } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { StatusBadge } from '../../components/StatusBadge';
 import type { BookingStatus } from '../../services/bookings';
@@ -24,6 +24,10 @@ export function BookingConfirmation() {
       bookingDetails: BookingDetails;
       bookingId?: string;
       bookingStatus?: BookingStatus;
+      paymentReference?: string;
+      paymentAmount?: number;
+      paymentMethodLabel?: string;
+      isSimulatedPayment?: boolean;
     }) || {};
 
   // Mock Booking ID
@@ -38,6 +42,13 @@ export function BookingConfirmation() {
         ? 'cancelled'
         : 'pending'
     : 'confirmed';
+
+  const paymentState = (location.state as {
+    paymentReference?: string;
+    paymentAmount?: number;
+    paymentMethodLabel?: string;
+    isSimulatedPayment?: boolean;
+  }) || {};
 
   // Redirect if missing data
   if (!lot || !bookingDetails) {
@@ -112,7 +123,7 @@ export function BookingConfirmation() {
                 <div>
                   <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Facility</p>
                   <p className="font-semibold text-slate-900 line-clamp-1" title={lot.name}>{lot.name}</p>
-                  <p className="text-xs text-slate-500">Nairobi, Kenya</p>
+                  <p className="text-xs text-slate-500">{lot.addressText || 'Address unavailable'}</p>
                 </div>
               </div>
 
@@ -146,6 +157,24 @@ export function BookingConfirmation() {
                   <p className="font-semibold text-slate-900">{bookingDetails.plate}</p>
                 </div>
               </div>
+
+              {'paymentReference' in (location.state || {}) && (
+                <div className="flex items-start gap-4 md:col-span-2">
+                  <div className="p-2 bg-blue-50 rounded-md border border-blue-100">
+                    <CreditCard className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Payment</p>
+                    <p className="font-semibold text-slate-900">
+                      {paymentState.paymentMethodLabel || 'M-Pesa'} · {paymentState.paymentAmount ? `KES ${paymentState.paymentAmount}` : 'Paid'}
+                    </p>
+                    <p className="text-xs text-slate-500 font-mono">{paymentState.paymentReference}</p>
+                    {paymentState.isSimulatedPayment && (
+                      <p className="text-[11px] text-amber-600 mt-1">Demo payment flow</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
