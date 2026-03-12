@@ -98,7 +98,7 @@ export const router = createBrowserRouter([
       {
         path: '/owner/dashboard',
         element: (
-          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']} redirectTo="/owner/login">
             <Dashboard />
           </ProtectedRoute>
         ),
@@ -107,7 +107,7 @@ export const router = createBrowserRouter([
       {
         path: '/owner/add-lot',
         element: (
-          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']} redirectTo="/owner/login">
             <AddEditLot />
           </ProtectedRoute>
         ),
@@ -115,7 +115,7 @@ export const router = createBrowserRouter([
       {
         path: '/owner/edit-lot',
         element: (
-          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']} redirectTo="/owner/login">
             <AddEditLot />
           </ProtectedRoute>
         ),
@@ -123,7 +123,7 @@ export const router = createBrowserRouter([
       {
         path: '/owner/todays-bookings',
         element: (
-          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']} redirectTo="/owner/login">
             <TodaysBookings />
           </ProtectedRoute>
         ),
@@ -131,7 +131,7 @@ export const router = createBrowserRouter([
       {
         path: '/owner/check-in-out',
         element: (
-          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']} redirectTo="/owner/login">
             <CheckInOut />
           </ProtectedRoute>
         ),
@@ -139,7 +139,7 @@ export const router = createBrowserRouter([
       {
         path: '/owner/analytics',
         element: (
-          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']} redirectTo="/owner/login">
             <Analytics />
           </ProtectedRoute>
         ),

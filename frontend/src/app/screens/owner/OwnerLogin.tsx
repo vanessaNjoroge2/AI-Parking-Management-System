@@ -11,7 +11,7 @@ export function OwnerLogin() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,7 +25,7 @@ export function OwnerLogin() {
       if (isSignUp) {
         const response = await register({
           fullName,
-          phone,
+          phone: identifier,
           email: email || undefined,
           password,
           role: 'OWNER',
@@ -37,7 +37,7 @@ export function OwnerLogin() {
         }
         navigate('/owner/dashboard');
       } else {
-        const response = await login({ phone, password });
+        const response = await login({ identifier, password });
         if (response.user.role !== 'OWNER' && response.user.role !== 'ADMIN') {
           setError('This account does not have owner access.');
           return;
@@ -102,15 +102,21 @@ export function OwnerLogin() {
             )}
 
             <div className="flex flex-col gap-1.5 text-left">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Business Phone</label>
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
+                {isSignUp ? 'Business Phone' : 'Email or phone'}
+              </label>
               <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                {isSignUp ? (
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                ) : (
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                )}
                 <Input
-                  type="tel"
-                  placeholder="07XX XXX XXX"
+                  type={isSignUp ? 'tel' : 'text'}
+                  placeholder={isSignUp ? '07XX XXX XXX' : 'Enter email or 07XX XXX XXX'}
                   className="pl-11 h-12 bg-slate-50 rounded-md border-slate-200"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   required
                 />
               </div>

@@ -63,13 +63,19 @@ export function Payment() {
     setPaymentMessage('');
 
     try {
-      const booking = await createBooking({
+      const bookingResponse = await createBooking({
         parkingLotId: lot.id,
         startTime: toIsoDateTime(bookingDetails.date, bookingDetails.startTime),
         endTime: toIsoDateTime(bookingDetails.date, bookingDetails.endTime),
         vehiclePlate: bookingDetails.plate,
         numberOfCars: 1,
       });
+
+      const booking = bookingResponse.booking;
+
+      if (!booking?.id) {
+        throw new Error('Unable to create booking. Please try again.');
+      }
 
       if (paymentMethod !== 'mpesa') {
         const simulatedPayment = await simulateFrontendPayment({
