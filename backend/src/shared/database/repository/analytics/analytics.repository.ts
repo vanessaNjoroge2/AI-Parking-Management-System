@@ -83,6 +83,11 @@ export class AnalyticsRepository {
       select: {
         amount: true,
         createdAt: true,
+        booking: {
+          select: {
+            parkingLotId: true,
+          },
+        },
       },
       orderBy: { createdAt: 'asc' },
     });

@@ -2,6 +2,9 @@ import {
   PrismaClient,
   UserRole,
   PricingType,
+  BookingStatus,
+  PaymentMethod,
+  PaymentStatus,
   Prisma,
 } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -29,13 +32,109 @@ type SeededLot = Prisma.ParkingLotGetPayload<{}> & {
   hourlyAmount: number;
 };
 
+function startOfCurrentYear() {
+  const now = new Date();
+  return new Date(now.getFullYear(), 0, 1, 8, 0, 0, 0);
+}
+
+function addDays(date: Date, days: number) {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+function randomInt(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function pickOne<T>(items: T[]): T {
+  return items[randomInt(0, items.length - 1)];
+}
+
+function makeBookingStatus(offsetDaysFromToday: number): BookingStatus {
+  if (offsetDaysFromToday > 2) {
+    return pickOne([
+      BookingStatus.COMPLETED,
+      BookingStatus.COMPLETED,
+      BookingStatus.COMPLETED,
+      BookingStatus.CHECKED_IN,
+      BookingStatus.CONFIRMED,
+    ]);
+  }
+
+  if (offsetDaysFromToday >= 0) {
+    return pickOne([
+      BookingStatus.CONFIRMED,
+      BookingStatus.CHECKED_IN,
+      BookingStatus.PENDING,
+    ]);
+  }
+
+  return BookingStatus.CONFIRMED;
+}
+
+async function clearSeededOwnerLots(ownerIds: string[]) {
+  const ownerLots = await prisma.parkingLot.findMany({
+    where: { ownerId: { in: ownerIds } },
+    select: { id: true },
+  });
+
+  const lotIds = ownerLots.map((lot) => lot.id);
+
+  if (lotIds.length === 0) return;
+
+  await prisma.payment.deleteMany({
+    where: {
+      booking: {
+        parkingLotId: { in: lotIds },
+      },
+    },
+  });
+
+  await prisma.booking.deleteMany({
+    where: {
+      parkingLotId: { in: lotIds },
+    },
+  });
+
+  await prisma.review.deleteMany({
+    where: {
+      parkingLotId: { in: lotIds },
+    },
+  });
+
+  await prisma.parkingPhoto.deleteMany({
+    where: {
+      parkingLotId: { in: lotIds },
+    },
+  });
+
+  await prisma.workingHour.deleteMany({
+    where: {
+      parkingLotId: { in: lotIds },
+    },
+  });
+
+  await prisma.pricingRule.deleteMany({
+    where: {
+      parkingLotId: { in: lotIds },
+    },
+  });
+
+  await prisma.parkingLot.deleteMany({
+    where: {
+      id: { in: lotIds },
+    },
+  });
+}
+
 async function main() {
   console.log('🌱 Seeding database...');
 
   const passwordHash = await bcrypt.hash('password123', 10);
 
-  // ---- ONLY 2 OWNERS ----
-  const [owner1, owner2] = await prisma.$transaction([
+  // ---- EXACTLY 2 OWNERS + 2 DRIVERS ----
+  const [owner1, owner2, driver1, driver2] = await prisma.$transaction([
     prisma.user.upsert({
       where: { phone: '0700000001' },
       update: {
@@ -64,13 +163,45 @@ async function main() {
         role: UserRole.OWNER,
       },
     }),
+    prisma.user.upsert({
+      where: { phone: '0700000003' },
+      update: {
+        fullName: 'Driver One',
+        password: passwordHash,
+        role: UserRole.DRIVER,
+      },
+      create: {
+        fullName: 'Driver One',
+        phone: '0700000003',
+        password: passwordHash,
+        role: UserRole.DRIVER,
+      },
+    }),
+    prisma.user.upsert({
+      where: { phone: '0700000004' },
+      update: {
+        fullName: 'Driver Two',
+        password: passwordHash,
+        role: UserRole.DRIVER,
+      },
+      create: {
+        fullName: 'Driver Two',
+        phone: '0700000004',
+        password: passwordHash,
+        role: UserRole.DRIVER,
+      },
+    }),
   ]);
 
-  console.log('✅ Owners seeded');
+  console.log('✅ Owners and drivers seeded');
 
-  // ---- EXACTLY 5 LOTS PER OWNER ----
+  // ---- CLEAN OLD LOTS FOR THESE OWNERS TO AVOID DUPLICATES ----
+  await clearSeededOwnerLots([owner1.id, owner2.id]);
+  console.log('✅ Existing seeded lots cleared');
+
+  // ---- SAME COORDINATES AS YOUR CURRENT SEEDER ----
   const parkingLotsSeed: SeedLotInput[] = [
-    // Owner 1 - Nairobi + Thika
+    // Owner 1
     {
       name: 'Owner One Nairobi CBD Parking',
       ownerId: owner1.id,
@@ -142,7 +273,7 @@ async function main() {
       description: 'Blue Post area parking',
     },
 
-    // Owner 2 - Nairobi + Thika
+    // Owner 2
     {
       name: 'Owner Two Nairobi Central Parking',
       ownerId: owner2.id,
@@ -218,53 +349,24 @@ async function main() {
   const lots: SeededLot[] = [];
 
   for (const lot of parkingLotsSeed) {
-    const existingLot = await prisma.parkingLot.findFirst({
-      where: {
+    const savedLot = await prisma.parkingLot.create({
+      data: {
         name: lot.name,
         ownerId: lot.ownerId,
+        latitude: lot.latitude,
+        longitude: lot.longitude,
+        capacityTotal: lot.capacityTotal,
+        isGuarded: lot.isGuarded,
+        hasCctv: lot.hasCctv,
+        hasLighting: lot.hasLighting,
+        description: lot.description ?? null,
+        addressText: lot.addressText ?? null,
+        address: lot.address ?? null,
+        isCovered: lot.isCovered ?? false,
+        wheelchairFriendly: lot.wheelchairFriendly ?? false,
+        isActive: true,
       },
     });
-
-    let savedLot;
-
-    if (existingLot) {
-      savedLot = await prisma.parkingLot.update({
-        where: { id: existingLot.id },
-        data: {
-          latitude: lot.latitude,
-          longitude: lot.longitude,
-          capacityTotal: lot.capacityTotal,
-          isGuarded: lot.isGuarded,
-          hasCctv: lot.hasCctv,
-          hasLighting: lot.hasLighting,
-          description: lot.description ?? null,
-          addressText: lot.addressText ?? null,
-          address: lot.address ?? null,
-          isCovered: lot.isCovered ?? false,
-          wheelchairFriendly: lot.wheelchairFriendly ?? false,
-          isActive: true,
-        },
-      });
-    } else {
-      savedLot = await prisma.parkingLot.create({
-        data: {
-          name: lot.name,
-          ownerId: lot.ownerId,
-          latitude: lot.latitude,
-          longitude: lot.longitude,
-          capacityTotal: lot.capacityTotal,
-          isGuarded: lot.isGuarded,
-          hasCctv: lot.hasCctv,
-          hasLighting: lot.hasLighting,
-          description: lot.description ?? null,
-          addressText: lot.addressText ?? null,
-          address: lot.address ?? null,
-          isCovered: lot.isCovered ?? false,
-          wheelchairFriendly: lot.wheelchairFriendly ?? false,
-          isActive: true,
-        },
-      });
-    }
 
     lots.push({
       ...savedLot,
@@ -274,22 +376,11 @@ async function main() {
 
   console.log('✅ Parking lots seeded');
 
-  // ---- WORKING HOURS: seed once only ----
+  // ---- WORKING HOURS ----
   for (const lot of lots) {
     for (let day = 0; day <= 6; day++) {
-      await prisma.workingHour.upsert({
-        where: {
-          parkingLotId_dayOfWeek: {
-            parkingLotId: lot.id,
-            dayOfWeek: day,
-          },
-        },
-        update: {
-          opensAt: '08:00',
-          closesAt: '18:00',
-          isClosed: false,
-        },
-        create: {
+      await prisma.workingHour.create({
+        data: {
           parkingLotId: lot.id,
           dayOfWeek: day,
           opensAt: '08:00',
@@ -302,37 +393,116 @@ async function main() {
 
   console.log('✅ Working hours seeded');
 
-  // ---- PRICING RULES: only create if HOURLY rule does not exist ----
+  // ---- PRICING RULES ----
   for (const lot of lots) {
-    const existingPricingRule = await prisma.pricingRule.findFirst({
-      where: {
+    await prisma.pricingRule.create({
+      data: {
         parkingLotId: lot.id,
         type: PricingType.HOURLY,
+        amount: lot.hourlyAmount,
+        currency: 'KES',
+        isActive: true,
       },
     });
-
-    if (existingPricingRule) {
-      await prisma.pricingRule.update({
-        where: { id: existingPricingRule.id },
-        data: {
-          amount: lot.hourlyAmount,
-          isActive: true,
-        },
-      });
-    } else {
-      await prisma.pricingRule.create({
-        data: {
-          parkingLotId: lot.id,
-          type: PricingType.HOURLY,
-          amount: lot.hourlyAmount,
-          currency: 'KES',
-          isActive: true,
-        },
-      });
-    }
   }
 
   console.log('✅ Pricing rules seeded');
+
+  // ---- BOOKINGS + PAYMENTS FROM JANUARY TO TODAY ----
+  const drivers = [driver1, driver2];
+  const startDate = startOfCurrentYear();
+  const today = new Date();
+
+  let bookingCount = 0;
+  let paymentCount = 0;
+
+  for (let cursor = new Date(startDate); cursor <= today; cursor = addDays(cursor, 1)) {
+    const weekday = cursor.getDay();
+
+    // fewer bookings on Sundays
+    const dailyBookings =
+      weekday === 0 ? randomInt(1, 3) : randomInt(3, 7);
+
+    for (let i = 0; i < dailyBookings; i++) {
+      const lot = pickOne(lots);
+      const driver = pickOne(drivers);
+
+      const startHour = randomInt(8, 16);
+      const durationHours = randomInt(1, 3);
+
+      const startTime = new Date(cursor);
+      startTime.setHours(startHour, pickOne([0, 15, 30, 45]), 0, 0);
+
+      const endTime = new Date(startTime);
+      endTime.setHours(endTime.getHours() + durationHours);
+
+      const daysDiff = Math.floor(
+        (today.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      const status = makeBookingStatus(daysDiff);
+      const numberOfCars = randomInt(1, 2);
+
+      const booking = await prisma.booking.create({
+        data: {
+          userId: driver.id,
+          parkingLotId: lot.id,
+          startTime,
+          endTime,
+          numberOfCars,
+          vehiclePlate: `K${randomInt(100, 999)}${String.fromCharCode(
+            65 + randomInt(0, 25),
+            65 + randomInt(0, 25),
+            65 + randomInt(0, 25),
+          )}`,
+          preference: pickOne([
+            'near-exit',
+            'covered',
+            'well-lit',
+            'guarded',
+            null,
+          ]),
+          status,
+        },
+      });
+
+      bookingCount += 1;
+
+      // only create successful payments for non-pending bookings
+      if (
+        status === BookingStatus.CONFIRMED ||
+        status === BookingStatus.CHECKED_IN ||
+        status === BookingStatus.COMPLETED
+      ) {
+        const amount = lot.hourlyAmount * durationHours * numberOfCars;
+
+        await prisma.payment.create({
+          data: {
+            bookingId: booking.id,
+            method: pickOne([PaymentMethod.MPESA, PaymentMethod.CARD]),
+            amount,
+            currency: 'KES',
+            status: PaymentStatus.SUCCESS,
+            provider: 'KCB_BUNI',
+            reference: `PAY-${booking.id.slice(0, 8)}-${startTime.getTime()}`,
+            providerRef: `REF-${randomInt(100000, 999999)}`,
+            phone: driver.phone,
+            rawPayload: {
+              seeded: true,
+              lotName: lot.name,
+              durationHours,
+              numberOfCars,
+            },
+          },
+        });
+
+        paymentCount += 1;
+      }
+    }
+  }
+
+  console.log(`✅ Bookings seeded: ${bookingCount}`);
+  console.log(`✅ Payments seeded: ${paymentCount}`);
   console.log('🌱 Seeding complete!');
 }
 
@@ -344,288 +514,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-// import {
-//   PrismaClient,
-//   UserRole,
-//   BookingStatus,
-//   PricingType,
-// } from '@prisma/client';
-// import * as bcrypt from 'bcrypt';
-
-// const prisma = new PrismaClient();
-
-// async function main() {
-//   console.log('🌱 Seeding database...');
-
-//   const passwordHash = await bcrypt.hash('password123', 10);
-
-//   // ---- USERS ----
-//   const [owner1, owner2, driver1, driver2] = await prisma.$transaction([
-//     prisma.user.upsert({
-//       where: { phone: '0700000001' },
-//       update: {},
-//       create: {
-//         fullName: 'Owner One',
-//         phone: '0700000001',
-//         password: passwordHash,
-//         role: UserRole.OWNER,
-//       },
-//     }),
-//     prisma.user.upsert({
-//       where: { phone: '0700000002' },
-//       update: {},
-//       create: {
-//         fullName: 'Owner Two',
-//         phone: '0700000002',
-//         password: passwordHash,
-//         role: UserRole.OWNER,
-//       },
-//     }),
-//     prisma.user.upsert({
-//       where: { phone: '0700000003' },
-//       update: {},
-//       create: {
-//         fullName: 'Driver One',
-//         phone: '0700000003',
-//         password: passwordHash,
-//         role: UserRole.DRIVER,
-//       },
-//     }),
-//     prisma.user.upsert({
-//       where: { phone: '0700000004' },
-//       update: {},
-//       create: {
-//         fullName: 'Driver Two',
-//         phone: '0700000004',
-//         password: passwordHash,
-//         role: UserRole.DRIVER,
-//       },
-//     }),
-//     prisma.user.upsert({
-//       where: { phone: '0700000005' },
-//       update: {},
-//       create: {
-//         fullName: 'Admin One',
-//         phone: '0700000005',
-//         password: passwordHash,
-//         role: UserRole.ADMIN,
-//       },
-//     }),
-//     prisma.user.upsert({
-//       where: { phone: '0700000006' },
-//       update: {},
-//       create: {
-//         fullName: 'Admin Two',
-//         phone: '0700000006',
-//         password: passwordHash,
-//         role: UserRole.ADMIN,
-//       },
-//     }),
-//   ]);
-
-//   console.log('✅ Users created');
-
-//   // ---- PARKING LOTS ----
-//   const lots = await prisma.$transaction([
-//     prisma.parkingLot.create({
-//       data: {
-//         name: 'CBD Secure Parking',
-//         ownerId: owner1.id,
-//         latitude: -1.286389,
-//         longitude: 36.817223,
-//         capacityTotal: 5,
-//         isGuarded: true,
-//         hasCctv: true,
-//       },
-//     }),
-//     prisma.parkingLot.create({
-//       data: {
-//         name: 'Westlands Mall Parking',
-//         ownerId: owner1.id,
-//         latitude: -1.2676,
-//         longitude: 36.8108,
-//         capacityTotal: 3,
-//         isGuarded: true,
-//       },
-//     }),
-//     prisma.parkingLot.create({
-//       data: {
-//         name: 'Karen Shopping Center',
-//         ownerId: owner2.id,
-//         latitude: -1.3197,
-//         longitude: 36.7073,
-//         capacityTotal: 4,
-//         hasLighting: true,
-//       },
-//     }),
-//     prisma.parkingLot.create({
-//       data: {
-//         name: 'Airport Parking Lot',
-//         ownerId: owner2.id,
-//         latitude: -1.3192,
-//         longitude: 36.9275,
-//         capacityTotal: 6,
-//         isGuarded: true,
-//       },
-//     }),
-//     // ===== NAIROBI AREA =====
-//     prisma.parkingLot.create({
-//       data: {
-//         name: 'Nairobi CBD Secure Parking',
-//         ownerId: owner1.id,
-//         latitude: -1.2905,
-//         longitude: 36.8215,
-//         capacityTotal: 10,
-//         isGuarded: true,
-//         hasCctv: true,
-//         hasLighting: true,
-//       },
-//     }),
-//     prisma.parkingLot.create({
-//       data: {
-//         name: 'Upper Hill Executive Parking',
-//         ownerId: owner1.id,
-//         latitude: -1.3,
-//         longitude: 36.812,
-//         capacityTotal: 8,
-//         isGuarded: true,
-//         hasCctv: true,
-//       },
-//     }),
-//     prisma.parkingLot.create({
-//       data: {
-//         name: 'Parklands Secure Lot',
-//         ownerId: owner2.id,
-//         latitude: -1.27,
-//         longitude: 36.83,
-//         capacityTotal: 6,
-//         hasLighting: true,
-//       },
-//     }),
-
-//     // ===== THIKA AREA =====
-//     prisma.parkingLot.create({
-//       data: {
-//         name: 'Thika Town Parking',
-//         ownerId: owner2.id,
-//         latitude: -1.05,
-//         longitude: 37.06,
-//         capacityTotal: 7,
-//         isGuarded: true,
-//       },
-//     }),
-//     prisma.parkingLot.create({
-//       data: {
-//         name: 'Blue Post Parking Lot',
-//         ownerId: owner1.id,
-//         latitude: -1.04,
-//         longitude: 37.07,
-//         capacityTotal: 5,
-//         hasCctv: true,
-//       },
-//     }),
-//     prisma.parkingLot.create({
-//       data: {
-//         name: 'Makongeni Secure Parking',
-//         ownerId: owner2.id,
-//         latitude: -1.0335,
-//         longitude: 37.065,
-//         capacityTotal: 4,
-//         isGuarded: true,
-//         hasLighting: true,
-//       },
-//     }),
-//   ]);
-
-//   console.log('✅ Parking lots created');
-
-//   // ---- WORKING HOURS (8am–6pm daily) ----
-//   for (const lot of lots) {
-//     for (let day = 0; day <= 6; day++) {
-//       await prisma.workingHour.create({
-//         data: {
-//           parkingLotId: lot.id,
-//           dayOfWeek: day,
-//           opensAt: '08:00',
-//           closesAt: '18:00',
-//           isClosed: false,
-//         },
-//       });
-//     }
-//   }
-
-//   console.log('✅ Working hours created');
-
-//   // ---- PRICING RULES ----
-//   const hourlyPrices = [
-//     250, // CBD Secure Parking
-//     180, // Westlands Mall Parking
-//     150, // Karen Shopping Center
-//     300, // Airport Parking Lot
-//     220, // Nairobi CBD Secure Parking
-//     350, // Upper Hill Executive Parking
-//     170, // Parklands Secure Lot
-//     100, // Thika Town Parking
-//     120, // Blue Post Parking Lot
-//     140, // Makongeni Secure Parking
-//   ];
-
-//   for (const [index, lot] of lots.entries()) {
-//     await prisma.pricingRule.create({
-//       data: {
-//         parkingLotId: lot.id,
-//         type: PricingType.HOURLY,
-//         amount: hourlyPrices[index] ?? 200,
-//       },
-//     });
-//   }
-
-//   console.log('✅ Pricing rules created');
-
-//   // ---- BOOKINGS ----
-//   await prisma.booking.createMany({
-//     data: [
-//       {
-//         userId: driver1.id,
-//         parkingLotId: lots[0].id,
-//         startTime: new Date('2026-02-25T09:00:00Z'),
-//         endTime: new Date('2026-02-25T11:00:00Z'),
-//         status: BookingStatus.CONFIRMED,
-//       },
-//       {
-//         userId: driver2.id,
-//         parkingLotId: lots[0].id,
-//         startTime: new Date('2026-02-25T09:30:00Z'),
-//         endTime: new Date('2026-02-25T10:30:00Z'),
-//         status: BookingStatus.PENDING,
-//       },
-//       {
-//         userId: driver1.id,
-//         parkingLotId: lots[1].id,
-//         startTime: new Date('2026-02-26T10:00:00Z'),
-//         endTime: new Date('2026-02-26T12:00:00Z'),
-//         status: BookingStatus.CONFIRMED,
-//       },
-//       {
-//         userId: driver2.id,
-//         parkingLotId: lots[2].id,
-//         startTime: new Date('2026-02-27T08:00:00Z'),
-//         endTime: new Date('2026-02-27T09:00:00Z'),
-//         status: BookingStatus.PENDING,
-//       },
-//     ],
-//   });
-
-//   console.log('✅ Bookings created');
-
-//   console.log('🌱 Seeding complete!');
-// }
-
-// main()
-//   .catch((e) => {
-//     console.error(e);
-//     process.exit(1);
-//   })
-//   .finally(async () => {
-//     await prisma.$disconnect();
-//   });

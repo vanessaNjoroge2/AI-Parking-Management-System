@@ -1,16 +1,16 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router';
-import { ArrowLeft, MapPin, DollarSign, Hash, Camera } from 'lucide-react';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Textarea } from '../../components/ui/textarea';
+import React, { useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
+import { ArrowLeft, MapPin, DollarSign, Hash, Camera } from "lucide-react";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Textarea } from "../../components/ui/textarea";
 import {
   createParkingLot,
   ParkingLot,
   setParkingLotPricing,
   setParkingLotWorkingHours,
   updateParkingLot,
-} from '../../services/parkingLots';
+} from "../../services/parkingLots";
 
 export function AddEditLot() {
   const navigate = useNavigate();
@@ -19,14 +19,16 @@ export function AddEditLot() {
   const isEditing = Boolean(lot);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [name, setName] = useState(lot?.name ?? '');
-  const [description, setDescription] = useState(lot?.description ?? '');
-  const [addressText, setAddressText] = useState(lot?.addressText ?? '');
+  const [name, setName] = useState(lot?.name ?? "");
+  const [description, setDescription] = useState(lot?.description ?? "");
+  const [addressText, setAddressText] = useState(lot?.addressText ?? "");
   const [latitude, setLatitude] = useState(lot ? Number(lot.latitude) : 0);
   const [longitude, setLongitude] = useState(lot ? Number(lot.longitude) : 0);
   const [capacityTotal, setCapacityTotal] = useState(lot?.capacityTotal ?? 0);
-  const [price, setPrice] = useState(lot?.pricingRules?.[0]?.amount ?? 0);
-  const [error, setError] = useState('');
+  const [price, setPrice] = useState<number>(
+    lot?.pricingRules?.[0]?.amount ?? 0,
+  );
+  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [images, setImages] = useState<string[]>(
     lot?.photos?.map((photo) => photo.url) ?? [],
@@ -42,8 +44,8 @@ export function AddEditLot() {
     () =>
       Array.from({ length: 7 }).map((_, index) => ({
         dayOfWeek: index,
-        opensAt: '08:00',
-        closesAt: '20:00',
+        opensAt: "08:00",
+        closesAt: "20:00",
         isClosed: false,
       })),
     [],
@@ -51,7 +53,7 @@ export function AddEditLot() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsSubmitting(true);
 
     try {
@@ -67,23 +69,26 @@ export function AddEditLot() {
         isCovered: amenities.covered,
       };
 
-      const savedLot = isEditing && lot
-        ? await updateParkingLot(lot.id, payload)
-        : await createParkingLot(payload);
+      const savedLot =
+        isEditing && lot
+          ? await updateParkingLot(lot.id, payload)
+          : await createParkingLot(payload);
 
       await setParkingLotPricing(savedLot.id, {
-        type: 'HOURLY',
-        amount: price,
-        currency: 'KES',
+        type: "HOURLY",
+        amount: Math.trunc(price),
+        currency: "KES",
       });
 
       if (!savedLot.workingHours || savedLot.workingHours.length === 0) {
         await setParkingLotWorkingHours(savedLot.id, defaultWorkingHours);
       }
 
-      navigate('/owner/dashboard');
+      navigate("/owner/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to save parking lot');
+      setError(
+        err instanceof Error ? err.message : "Unable to save parking lot",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -99,7 +104,7 @@ export function AddEditLot() {
 
     const newUrls = files.map((file) => URL.createObjectURL(file));
     setImages((prev) => [...prev, ...newUrls]);
-    event.target.value = '';
+    event.target.value = "";
   };
 
   const removeImage = (index: number) => {
@@ -112,23 +117,28 @@ export function AddEditLot() {
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
           <button
-            onClick={() => navigate('/owner/dashboard')}
+            onClick={() => navigate("/owner/dashboard")}
             className="p-2 hover:bg-secondary rounded-xl transition-colors"
           >
             <ArrowLeft className="w-6 h-6 text-foreground" />
           </button>
           <h2 className="text-3xl font-bold tracking-tight">
-            {isEditing ? 'Edit Parking Lot' : 'Add Parking Lot'}
+            {isEditing ? "Edit Parking Lot" : "Add Parking Lot"}
           </h2>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
+        >
           {/* Left Column: Media & Basic Info */}
           <div className="lg:col-span-7 space-y-6">
             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-border/50 space-y-6">
               {/* Photos */}
               <div>
-                <label className="text-sm font-medium text-foreground mb-4 block">Parking Photos</label>
+                <label className="text-sm font-medium text-foreground mb-4 block">
+                  Parking Photos
+                </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {images.map((src, index) => (
                     <button
@@ -137,7 +147,11 @@ export function AddEditLot() {
                       onClick={() => removeImage(index)}
                       className="relative aspect-video overflow-hidden rounded-2xl border border-border shadow-sm"
                     >
-                      <img src={src} alt={`Parking ${index + 1}`} className="h-full w-full object-cover" />
+                      <img
+                        src={src}
+                        alt={`Parking ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
                       <span className="absolute top-3 right-3 bg-white/90 text-xs px-2 py-1 rounded-full">
                         Remove
                       </span>
@@ -153,7 +167,9 @@ export function AddEditLot() {
                       <Camera className="w-6 h-6 text-primary" />
                     </div>
                     <span className="text-sm font-medium text-muted-foreground">
-                      {images.length > 0 ? 'Add another photo' : 'Add main photo'}
+                      {images.length > 0
+                        ? "Add another photo"
+                        : "Add main photo"}
                     </span>
                   </button>
                 </div>
@@ -169,7 +185,9 @@ export function AddEditLot() {
 
               {/* Name */}
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Parking Lot Name</label>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Parking Lot Name
+                </label>
                 <Input
                   type="text"
                   placeholder="e.g., Downtown Plaza Parking"
@@ -182,7 +200,9 @@ export function AddEditLot() {
 
               {/* Description */}
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Description</label>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Description
+                </label>
                 <Textarea
                   placeholder="Describe your parking lot..."
                   className="bg-white rounded-2xl border border-border min-h-[120px] resize-none"
@@ -198,7 +218,9 @@ export function AddEditLot() {
             <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-border/50 space-y-6">
               {/* Address */}
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Address</label>
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Address
+                </label>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
@@ -214,7 +236,9 @@ export function AddEditLot() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Latitude</label>
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Latitude
+                  </label>
                   <Input
                     type="number"
                     step="0.000001"
@@ -226,7 +250,9 @@ export function AddEditLot() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Longitude</label>
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Longitude
+                  </label>
                   <Input
                     type="number"
                     step="0.000001"
@@ -242,7 +268,9 @@ export function AddEditLot() {
               <div className="grid grid-cols-2 gap-4">
                 {/* Total Spots */}
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Total Spots</label>
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Total Spots
+                  </label>
                   <div className="relative">
                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
@@ -258,16 +286,21 @@ export function AddEditLot() {
 
                 {/* Pricing */}
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Price / Hour</label>
+                  <label className="text-sm font-medium text-foreground mb-2 block">
+                    Price / Hour
+                  </label>
                   <div className="relative">
                     <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
                       type="number"
-                      placeholder="8.00"
-                      step="0.01"
+                      placeholder="8"
+                      step="1"
+                      min="0"
                       className="pl-12 h-14 bg-white rounded-2xl border border-border"
                       value={price}
-                      onChange={(e) => setPrice(Number(e.target.value))}
+                      onChange={(e) =>
+                        setPrice(parseInt(e.target.value || "0", 10))
+                      }
                       required
                     />
                   </div>
@@ -276,23 +309,34 @@ export function AddEditLot() {
 
               {/* Amenities */}
               <div>
-                <label className="text-sm font-medium text-foreground mb-3 block">Amenities</label>
+                <label className="text-sm font-medium text-foreground mb-3 block">
+                  Amenities
+                </label>
                 <div className="grid grid-cols-1 gap-3">
                   {[
-                    { key: 'security', label: '24/7 Security' },
-                    { key: 'cctv', label: 'CCTV Surveillance' },
-                    { key: 'covered', label: 'Covered Parking' },
-                    { key: 'evCharging', label: 'EV Charging Stations' },
+                    { key: "security", label: "24/7 Security" },
+                    { key: "cctv", label: "CCTV Surveillance" },
+                    { key: "covered", label: "Covered Parking" },
+                    { key: "evCharging", label: "EV Charging Stations" },
                   ].map((amenity) => (
                     <label
                       key={amenity.key}
                       className="flex items-center justify-between p-4 bg-secondary/30 rounded-2xl border border-border/50 cursor-pointer hover:bg-secondary/60 transition-colors"
                     >
-                      <span className="font-medium text-sm">{amenity.label}</span>
+                      <span className="font-medium text-sm">
+                        {amenity.label}
+                      </span>
                       <input
                         type="checkbox"
-                        checked={amenities[amenity.key as keyof typeof amenities]}
-                        onChange={(e) => setAmenities({ ...amenities, [amenity.key]: e.target.checked })}
+                        checked={
+                          amenities[amenity.key as keyof typeof amenities]
+                        }
+                        onChange={(e) =>
+                          setAmenities({
+                            ...amenities,
+                            [amenity.key]: e.target.checked,
+                          })
+                        }
                         className="w-5 h-5 rounded accent-primary"
                       />
                     </label>
@@ -305,7 +349,7 @@ export function AddEditLot() {
                 className="w-full h-14 rounded-2xl bg-primary text-white text-lg font-medium shadow-md hover:shadow-lg transition-all"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Saving...' : 'Save Parking Lot'}
+                {isSubmitting ? "Saving..." : "Save Parking Lot"}
               </Button>
 
               {error && (
