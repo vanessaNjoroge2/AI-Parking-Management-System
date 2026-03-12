@@ -97,9 +97,13 @@ export class PaymentsService {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const providerMessage =
-          (typeof error.response?.data === 'object' && error.response?.data
-            ? (error.response.data as { message?: string; ResponseDescription?: string; errorMessage?: string })
-            : undefined);
+          typeof error.response?.data === 'object' && error.response?.data
+            ? (error.response.data as {
+                message?: string;
+                ResponseDescription?: string;
+                errorMessage?: string;
+              })
+            : undefined;
 
         throw new ServiceUnavailableException(
           providerMessage?.message ||

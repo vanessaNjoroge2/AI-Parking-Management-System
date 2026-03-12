@@ -1,5 +1,9 @@
 import axios from 'axios';
-import { BadRequestException, Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import type { AxiosResponse } from 'axios';
 
 interface KcbAccessTokenResponse {
@@ -61,7 +65,10 @@ export class KcbBuniService {
       throw new Error('Missing KCB STK environment variables');
     }
 
-    if (!/^https?:\/\//.test(callbackUrl) || callbackUrl.includes('your-domain.com')) {
+    if (
+      !/^https?:\/\//.test(callbackUrl) ||
+      callbackUrl.includes('your-domain.com')
+    ) {
       throw new BadRequestException(
         'KCB callback URL is not configured with a real reachable URL',
       );
@@ -92,9 +99,13 @@ export class KcbBuniService {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const providerMessage =
-          (typeof error.response?.data === 'object' && error.response?.data
-            ? (error.response.data as { message?: string; ResponseDescription?: string; errorMessage?: string })
-            : undefined);
+          typeof error.response?.data === 'object' && error.response?.data
+            ? (error.response.data as {
+                message?: string;
+                ResponseDescription?: string;
+                errorMessage?: string;
+              })
+            : undefined;
 
         throw new ServiceUnavailableException(
           providerMessage?.message ||

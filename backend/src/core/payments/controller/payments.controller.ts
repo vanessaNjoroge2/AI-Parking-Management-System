@@ -20,10 +20,7 @@ export class PaymentsController {
 
   @UseGuards(JwtAuthGuard)
   @Post('stk-push')
-  stkPush(
-    @Req() req: AuthRequest,
-    @Body() dto: StkPushDto,
-  ) {
+  stkPush(@Req() req: AuthRequest, @Body() dto: StkPushDto) {
     return this.service.stkPush(req.user, dto);
   }
 

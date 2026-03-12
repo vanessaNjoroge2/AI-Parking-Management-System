@@ -33,7 +33,10 @@ export class ParkingLotsRepository {
     });
 
     const occupancyMap = new Map(
-      aggregates.map((item) => [item.parkingLotId, item._sum.numberOfCars ?? 0]),
+      aggregates.map((item) => [
+        item.parkingLotId,
+        item._sum.numberOfCars ?? 0,
+      ]),
     );
 
     return lots.map((lot) => {

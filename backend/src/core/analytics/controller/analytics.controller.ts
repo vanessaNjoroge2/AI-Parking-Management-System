@@ -1,7 +1,16 @@
-import { Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  Req,
+  // Res,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../../shared/guards/jwt/jwt-auth.guard';
 import type { AuthRequest } from '../../../shared/interfaces/authrequest.interface';
 import { AnalyticsService } from '../service/analytics.service';
+import { Response } from 'express';
 
 @Controller()
 export class AnalyticsController {
@@ -56,4 +65,30 @@ export class AnalyticsController {
   ) {
     return this.service.parkingLotStats(req.user, id, date);
   }
+
+  // @Get('analytics/owner/report')
+  // // @UseGuards(JwtAuthGuard)
+  // async downloadOwnerReport(
+  //   @Req() req: any,
+  //   @Query('from') from?: string,
+  //   @Query('to') to?: string,
+  //   @Query('parkingLotId') parkingLotId?: string,
+  //   @Res() res?: Response,
+  // ) {
+  //   const { buffer, fileName } =
+  //     await this.analyticsService.generateOwnerReportPdf(
+  //       req.user,
+  //       from,
+  //       to,
+  //       parkingLotId,
+  //     );
+
+  //   res?.set({
+  //     'Content-Type': 'application/pdf',
+  //     'Content-Disposition': `attachment; filename="${fileName}"`,
+  //     'Content-Length': buffer.length,
+  //   });
+
+  //   res?.end(buffer);
+  // }
 }

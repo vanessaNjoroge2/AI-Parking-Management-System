@@ -203,4 +203,16 @@ export class AnalyticsRepository {
       totalRevenue: paymentsAgg._sum.amount ?? 0,
     };
   }
+  async getOwnerParkingLots(ownerId: string) {
+    return this.db.parkingLot.findMany({
+      where: { ownerId },
+      select: {
+        id: true,
+        name: true,
+        capacityTotal: true,
+        isActive: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
 }
