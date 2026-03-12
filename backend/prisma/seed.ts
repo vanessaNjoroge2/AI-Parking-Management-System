@@ -229,11 +229,7 @@ async function main() {
       data: {
         parkingLotId: lot.id,
         type: PricingType.HOURLY,
-<<<<<<< HEAD
         amount: hourlyPrices[index] ?? 200,
-=======
-        amount: 50,
->>>>>>> refs/remotes/origin/main
       },
     });
   }

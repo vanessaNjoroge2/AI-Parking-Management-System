@@ -3,7 +3,9 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
+import axios from 'axios';
 import {
   UserRole,
   PaymentStatus,
@@ -50,7 +52,15 @@ export class PaymentsService {
     user: { userId: string },
     dto: { bookingId: string; phone: string },
   ) {
-    const booking = await this.repo.findBooking(dto.bookingId);
+    if (!dto.bookingId?.trim()) {
+      throw new BadRequestException('bookingId is required');
+    }
+
+    if (!dto.phone?.trim()) {
+      throw new BadRequestException('phone is required');
+    }
+
+    const booking = await this.repo.findBooking(dto.bookingId.trim());
 
     if (!booking) throw new NotFoundException('Booking not found');
 
@@ -67,14 +77,46 @@ export class PaymentsService {
     }
 
     const normalizedPhone = this.normalizePhone(dto.phone);
+
+    if (!/^254(7|1)\d{8}$/.test(normalizedPhone)) {
+      throw new BadRequestException(
+        'Enter a valid M-Pesa phone number in 07XXXXXXXX or 2547XXXXXXXX format',
+      );
+    }
+
     const amount = this.calculateAmount(booking);
     const reference = `INV-${Date.now()}`;
 
-    const providerResponse: KcbStkResponse = await this.kcb.stkPush({
-      phone: normalizedPhone,
-      amount,
-      invoiceNumber: reference,
-    });
+    let providerResponse: KcbStkResponse;
+    try {
+      providerResponse = await this.kcb.stkPush({
+        phone: normalizedPhone,
+        amount,
+        invoiceNumber: reference,
+      });
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const providerMessage =
+          (typeof error.response?.data === 'object' && error.response?.data
+            ? (error.response.data as { message?: string; ResponseDescription?: string; errorMessage?: string })
+            : undefined);
+
+        throw new ServiceUnavailableException(
+          providerMessage?.message ||
+            providerMessage?.ResponseDescription ||
+            providerMessage?.errorMessage ||
+            'Unable to initiate M-Pesa payment right now. Please confirm your KCB sandbox configuration and try again.',
+        );
+      }
+
+      if (error instanceof Error) {
+        throw new ServiceUnavailableException(error.message);
+      }
+
+      throw new ServiceUnavailableException(
+        'Unable to initiate M-Pesa payment right now. Please try again later.',
+      );
+    }
 
     const payment = await this.repo.createPayment({
       bookingId: dto.bookingId,
@@ -221,15 +263,17 @@ export class PaymentsService {
     throw new ForbiddenException('Not allowed to view this payment');
   }
   private normalizePhone(phone: string) {
-    if (phone.startsWith('0')) {
-      return `254${phone.slice(1)}`;
+    const normalized = phone.replace(/\s+/g, '');
+
+    if (normalized.startsWith('0')) {
+      return `254${normalized.slice(1)}`;
     }
 
-    if (phone.startsWith('+254')) {
-      return phone.slice(1);
+    if (normalized.startsWith('+254')) {
+      return normalized.slice(1);
     }
 
-    return phone;
+    return normalized;
   }
 
   private calculateAmount(booking: BookingWithPricing): number {
