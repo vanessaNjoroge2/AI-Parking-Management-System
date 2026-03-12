@@ -129,7 +129,41 @@ git push --force-with-lease origin booking
 
 Use this when testing the live M-Pesa STK push flow from KCB against your local backend.
 
-### 1. Start the backend
+### 1. Install ngrok
+
+If you do not already have ngrok installed, use the setup for your platform.
+
+#### macOS
+
+Install with Homebrew:
+
+```bash
+brew install ngrok/ngrok/ngrok
+```
+
+#### Windows
+
+Install with Winget:
+
+```powershell
+winget install Ngrok.Ngrok
+```
+
+Or install with Chocolatey:
+
+```powershell
+choco install ngrok
+```
+
+Then connect your local ngrok client to your ngrok account:
+
+```bash
+ngrok config add-authtoken YOUR_NGROK_AUTHTOKEN
+```
+
+You can copy the auth token from your ngrok dashboard.
+
+### 2. Start the backend
 
 This project runs on port `4367` by default.
 
@@ -137,7 +171,7 @@ This project runs on port `4367` by default.
 npm run start:dev
 ```
 
-### 2. Start ngrok for the backend port
+### 3. Start ngrok for the backend port
 
 In a separate terminal:
 
@@ -151,7 +185,7 @@ Copy the HTTPS forwarding URL from ngrok. It will look like:
 https://abc12345.ngrok-free.dev
 ```
 
-### 3. Update `.env`
+### 4. Update `.env`
 
 Point `KCB_CALLBACK_URL` to the public ngrok callback route exposed by this backend:
 
@@ -161,7 +195,7 @@ KCB_CALLBACK_URL=https://abc12345.ngrok-free.dev/payments/callback/kcb
 
 Make sure there is no leading space after `=`.
 
-### 4. Restart the backend
+### 5. Restart the backend
 
 After updating `.env`, restart the backend so the new callback URL is loaded.
 
