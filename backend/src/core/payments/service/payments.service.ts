@@ -16,7 +16,7 @@ import {
 import { PaymentsRepository } from '../../../shared/database/repository/payments/payments.repository';
 import { KcbBuniService, KcbStkResponse } from '../providers/kcb-buni.service';
 
-interface KcbCallbackPayload {
+export interface KcbCallbackPayload {
   invoiceNumber?: string;
   BillRefNumber?: string;
   reference?: string;
@@ -88,11 +88,23 @@ export class PaymentsService {
     const reference = `INV-${Date.now()}`;
 
     let providerResponse: KcbStkResponse;
+    let providerData: any;
+
     try {
       providerResponse = await this.kcb.stkPush({
         phone: normalizedPhone,
         amount,
         invoiceNumber: reference,
+      });
+
+      console.log('KCB STK INIT RESPONSE:');
+      console.dir(providerResponse, { depth: null });
+
+      providerData = (providerResponse as any)?.response ?? providerResponse;
+
+      console.log('EXTRACTED IDS:', {
+        providerRequestId: providerData?.MerchantRequestID,
+        providerCheckoutId: providerData?.CheckoutRequestID,
       });
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -128,7 +140,12 @@ export class PaymentsService {
       amount,
       phone: normalizedPhone,
       reference,
+      providerRequestId: providerData?.MerchantRequestID ?? null,
+      providerCheckoutId: providerData?.CheckoutRequestID ?? null,
+      rawPayload: providerResponse as unknown as Prisma.InputJsonValue,
     });
+
+    console.log('CREATED PAYMENT:', payment);
 
     return {
       message: 'STK Push sent',
@@ -138,50 +155,79 @@ export class PaymentsService {
     };
   }
 
-  async handleKcbCallback(payload: KcbCallbackPayload) {
+  async handleKcbCallback(payload: any) {
     if (!payload) {
       throw new BadRequestException('Callback payload is missing');
     }
-    const reference =
-      payload.invoiceNumber ?? payload.BillRefNumber ?? payload.reference;
 
-    if (!reference) {
-      throw new BadRequestException('Callback reference not found');
+    const callback = payload?.Body?.stkCallback;
+
+    if (!callback) {
+      throw new BadRequestException('Invalid callback payload');
     }
 
-    const success =
-      payload.status === 'Success' ||
-      payload.ResultCode === 0 ||
-      payload.ResultCode === Number(0);
+    const checkoutRequestId = callback.CheckoutRequestID;
+    const merchantRequestId = callback.MerchantRequestID;
+    const resultCode = Number(callback.ResultCode ?? -1);
+    const resultDesc = callback.ResultDesc ?? '';
+    const success = resultCode === 0;
 
-    const payment = await this.repo.getPaymentByReference(reference);
+    const metadataItems = Array.isArray(callback.CallbackMetadata?.Item)
+      ? callback.CallbackMetadata.Item
+      : [];
+
+    const getMetaValue = (name: string) =>
+      metadataItems.find((item: any) => item.Name === name)?.Value;
+
+    const mpesaReceiptNumber = getMetaValue('MpesaReceiptNumber');
+    const amount = getMetaValue('Amount');
+    const phoneNumber = getMetaValue('PhoneNumber');
+    const transactionDate = getMetaValue('TransactionDate');
+
+    let payment = await this.repo.getPaymentByCheckoutId(checkoutRequestId);
+
+    if (!payment && merchantRequestId) {
+      payment =
+        await this.repo.getPaymentByProviderRequestId(merchantRequestId);
+    }
 
     if (!payment) {
       throw new NotFoundException(
-        `Payment not found for reference ${reference}`,
+        `Payment not found for checkout request ID ${checkoutRequestId}`,
       );
     }
+
+    console.log('CALLBACK MATCHED PAYMENT:', {
+      reference: payment.reference,
+      checkoutRequestId,
+      merchantRequestId,
+      currentStatus: payment.status,
+    });
 
     if (payment.status !== PaymentStatus.INITIATED) {
       return {
         message: 'Payment already processed',
-        reference,
+        reference: payment.reference,
         currentStatus: payment.status,
       };
     }
 
-    await this.repo.updateByReference(reference, {
-      status: success ? PaymentStatus.SUCCESS : PaymentStatus.FAILED,
-      rawPayload: payload as Prisma.InputJsonValue,
-    });
+    const updatedPayment = await this.repo.markPaymentResultByReference(
+      payment.reference,
+      success ? PaymentStatus.SUCCESS : PaymentStatus.FAILED,
+      mpesaReceiptNumber,
+      payload as Prisma.InputJsonValue,
+    );
 
-    if (success) {
-      await this.repo.confirmBooking(reference);
-    }
+    console.log('CALLBACK UPDATED PAYMENT:', updatedPayment);
 
     return {
       message: success ? 'Payment marked successful' : 'Payment marked failed',
-      reference,
+      reference: payment.reference,
+      resultDesc,
+      amount,
+      phoneNumber,
+      transactionDate,
     };
   }
 

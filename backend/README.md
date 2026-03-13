@@ -101,7 +101,7 @@ git commit -m "add patient registration endpoint"
 # 1. Fetch latest changes from remote
 git fetch origin
 
-# 2. Rebase your branch onto latest master
+# 2. Rebase your branch onto latest main
 git rebase origin/main
 
 # 3. If conflicts occur, resolve them and continue

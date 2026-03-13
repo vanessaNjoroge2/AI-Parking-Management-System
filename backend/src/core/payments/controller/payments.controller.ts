@@ -47,7 +47,11 @@ export class PaymentsController {
 
   @Post('callback/kcb')
   @HttpCode(200)
-  handleKcbCallback(@Body() payload: any) {
+  async handleKcbCallback(@Body() payload: any) {
+    console.log('=== KCB CALLBACK START ===');
+    console.dir(payload, { depth: null });
+    console.log('=== KCB CALLBACK END ===');
+
     return this.service.handleKcbCallback(payload);
   }
 }

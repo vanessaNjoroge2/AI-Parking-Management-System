@@ -211,7 +211,7 @@ async function main() {
       isGuarded: true,
       hasCctv: true,
       hasLighting: true,
-      hourlyAmount: 250,
+      hourlyAmount: 1,
       addressText: 'Nairobi CBD',
       address: 'Nairobi CBD',
       description: 'Secure parking in Nairobi CBD',
@@ -225,7 +225,7 @@ async function main() {
       isGuarded: true,
       hasCctv: true,
       hasLighting: true,
-      hourlyAmount: 300,
+      hourlyAmount: 1,
       addressText: 'Upper Hill, Nairobi',
       address: 'Upper Hill',
       description: 'Executive parking in Upper Hill',
@@ -239,7 +239,7 @@ async function main() {
       isGuarded: true,
       hasCctv: false,
       hasLighting: true,
-      hourlyAmount: 220,
+      hourlyAmount: 1,
       addressText: 'Westlands, Nairobi',
       address: 'Westlands',
       description: 'Convenient parking in Westlands',
@@ -253,7 +253,7 @@ async function main() {
       isGuarded: true,
       hasCctv: false,
       hasLighting: true,
-      hourlyAmount: 120,
+      hourlyAmount: 1,
       addressText: 'Thika Town',
       address: 'Thika',
       description: 'Town parking in Thika',
@@ -267,7 +267,7 @@ async function main() {
       isGuarded: false,
       hasCctv: true,
       hasLighting: true,
-      hourlyAmount: 130,
+      hourlyAmount: 1,
       addressText: 'Blue Post, Thika',
       address: 'Blue Post',
       description: 'Blue Post area parking',
@@ -283,7 +283,7 @@ async function main() {
       isGuarded: true,
       hasCctv: true,
       hasLighting: true,
-      hourlyAmount: 240,
+      hourlyAmount: 1,
       addressText: 'Central Nairobi',
       address: 'Nairobi Central',
       description: 'Central Nairobi secure lot',
@@ -297,7 +297,7 @@ async function main() {
       isGuarded: true,
       hasCctv: false,
       hasLighting: true,
-      hourlyAmount: 210,
+      hourlyAmount: 1,
       addressText: 'Kilimani, Nairobi',
       address: 'Kilimani',
       description: 'Kilimani parking lot',
@@ -311,7 +311,7 @@ async function main() {
       isGuarded: false,
       hasCctv: true,
       hasLighting: true,
-      hourlyAmount: 200,
+      hourlyAmount: 1,
       addressText: 'Parklands, Nairobi',
       address: 'Parklands',
       description: 'Parklands secure parking',
@@ -325,7 +325,7 @@ async function main() {
       isGuarded: true,
       hasCctv: false,
       hasLighting: true,
-      hourlyAmount: 110,
+      hourlyAmount: 1,
       addressText: 'Makongeni, Thika',
       address: 'Makongeni',
       description: 'Makongeni area parking',
@@ -339,7 +339,7 @@ async function main() {
       isGuarded: true,
       hasCctv: true,
       hasLighting: false,
-      hourlyAmount: 140,
+      hourlyAmount: 1,
       addressText: 'Thika Bypass',
       address: 'Thika Bypass',
       description: 'Parking near Thika Bypass',
@@ -414,7 +414,7 @@ async function main() {
   const today = new Date();
 
   let bookingCount = 0;
-  let paymentCount = 0;
+  // let paymentCount = 0;
 
   for (let cursor = new Date(startDate); cursor <= today; cursor = addDays(cursor, 1)) {
     const weekday = cursor.getDay();
@@ -469,40 +469,40 @@ async function main() {
       bookingCount += 1;
 
       // only create successful payments for non-pending bookings
-      if (
-        status === BookingStatus.CONFIRMED ||
-        status === BookingStatus.CHECKED_IN ||
-        status === BookingStatus.COMPLETED
-      ) {
-        const amount = lot.hourlyAmount * durationHours * numberOfCars;
+      // if (
+      //   status === BookingStatus.CONFIRMED ||
+      //   status === BookingStatus.CHECKED_IN ||
+      //   status === BookingStatus.COMPLETED
+      // ) {
+      //   const amount = lot.hourlyAmount * durationHours * numberOfCars;
 
-        await prisma.payment.create({
-          data: {
-            bookingId: booking.id,
-            method: pickOne([PaymentMethod.MPESA, PaymentMethod.CARD]),
-            amount,
-            currency: 'KES',
-            status: PaymentStatus.SUCCESS,
-            provider: 'KCB_BUNI',
-            reference: `PAY-${booking.id.slice(0, 8)}-${startTime.getTime()}`,
-            providerRef: `REF-${randomInt(100000, 999999)}`,
-            phone: driver.phone,
-            rawPayload: {
-              seeded: true,
-              lotName: lot.name,
-              durationHours,
-              numberOfCars,
-            },
-          },
-        });
+      //   await prisma.payment.create({
+      //     data: {
+      //       bookingId: booking.id,
+      //       method: pickOne([PaymentMethod.MPESA, PaymentMethod.CARD]),
+      //       amount,
+      //       currency: 'KES',
+      //       status: PaymentStatus.SUCCESS,
+      //       provider: 'KCB_BUNI',
+      //       reference: `PAY-${booking.id.slice(0, 8)}-${startTime.getTime()}`,
+      //       providerRef: `REF-${randomInt(100000, 999999)}`,
+      //       phone: driver.phone,
+      //       rawPayload: {
+      //         seeded: true,
+      //         lotName: lot.name,
+      //         durationHours,
+      //         numberOfCars,
+      //       },
+      //     },
+      //   });
 
-        paymentCount += 1;
-      }
+      //   paymentCount += 1;
+      // }
     }
   }
 
   console.log(`✅ Bookings seeded: ${bookingCount}`);
-  console.log(`✅ Payments seeded: ${paymentCount}`);
+  // console.log(`✅ Payments seeded: ${paymentCount}`);
   console.log('🌱 Seeding complete!');
 }
 
