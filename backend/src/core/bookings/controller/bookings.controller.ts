@@ -13,6 +13,7 @@ import { JwtAuthGuard } from '../../../shared/guards/jwt/jwt-auth.guard';
 import type { AuthRequest } from '../../../shared/interfaces/authrequest.interface';
 import { BookingsService } from '../service/bookings.service';
 import { CreateBookingDto } from '../dto/create-booking.dto';
+import { EstimateBookingDto } from '../dto/estimate-booking.dto';
 
 @Controller('bookings')
 export class BookingsController {
@@ -28,6 +29,23 @@ export class BookingsController {
   @Get('my')
   my(@Req() req: AuthRequest) {
     return this.service.myBookings(req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('my/:id')
+  myById(@Req() req: AuthRequest, @Param('id') id: string) {
+    return this.service.myBookingById(req.user, id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('my/:id/cancel')
+  cancelMyBooking(@Req() req: AuthRequest, @Param('id') id: string) {
+    return this.service.cancelMyBooking(req.user, id);
+  }
+
+  @Post('estimate')
+  estimate(@Body() dto: EstimateBookingDto) {
+    return this.service.estimate(dto);
   }
   // ✅ OWNER: Today’s bookings (optional: ?date=2026-02-25)
   @UseGuards(JwtAuthGuard)

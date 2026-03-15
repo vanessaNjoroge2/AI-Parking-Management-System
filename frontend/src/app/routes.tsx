@@ -98,7 +98,7 @@ export const router = createBrowserRouter([
       {
         path: '/owner/dashboard',
         element: (
-          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']}>
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']} redirectTo="/owner/login">
             <Dashboard />
           </ProtectedRoute>
         ),
@@ -106,23 +106,43 @@ export const router = createBrowserRouter([
 
       {
         path: '/owner/add-lot',
-        Component: AddEditLot,
+        element: (
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']} redirectTo="/owner/login">
+            <AddEditLot />
+          </ProtectedRoute>
+        ),
       },
       {
         path: '/owner/edit-lot',
-        Component: AddEditLot,
+        element: (
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']} redirectTo="/owner/login">
+            <AddEditLot />
+          </ProtectedRoute>
+        ),
       },
       {
         path: '/owner/todays-bookings',
-        Component: TodaysBookings,
+        element: (
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']} redirectTo="/owner/login">
+            <TodaysBookings />
+          </ProtectedRoute>
+        ),
       },
       {
         path: '/owner/check-in-out',
-        Component: CheckInOut,
+        element: (
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']} redirectTo="/owner/login">
+            <CheckInOut />
+          </ProtectedRoute>
+        ),
       },
       {
         path: '/owner/analytics',
-        Component: Analytics,
+        element: (
+          <ProtectedRoute allowedRoles={['OWNER', 'ADMIN']} redirectTo="/owner/login">
+            <Analytics />
+          </ProtectedRoute>
+        ),
       },
     ],
   },

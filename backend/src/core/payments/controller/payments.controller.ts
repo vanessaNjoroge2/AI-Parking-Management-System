@@ -7,10 +7,12 @@ import {
   Query,
   Req,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../../shared/guards/jwt/jwt-auth.guard';
 import type { AuthRequest } from '../../../shared/interfaces/authrequest.interface';
 import { PaymentsService } from '../../../core/payments/service/payments.service';
+import { StkPushDto } from '../dto/stk-push.dto';
 
 @Controller('payments')
 export class PaymentsController {
@@ -18,10 +20,7 @@ export class PaymentsController {
 
   @UseGuards(JwtAuthGuard)
   @Post('stk-push')
-  stkPush(
-    @Req() req: AuthRequest,
-    @Body() dto: { bookingId: string; phone: string },
-  ) {
+  stkPush(@Req() req: AuthRequest, @Body() dto: StkPushDto) {
     return this.service.stkPush(req.user, dto);
   }
 
@@ -45,10 +44,14 @@ export class PaymentsController {
   list(@Req() req: AuthRequest, @Query() q: any) {
     return this.service.list(req.user, q);
   }
-}
 
-// @UseGuards(JwtAuthGuard)
-//   @Post(':id/handleKcbCallback')
-//   handleKcbCallback(@Body() payload: any) {
-//     return this.service.handleKcbCallback(payload);
-//   }
+  @Post('callback/kcb')
+  @HttpCode(200)
+  async handleKcbCallback(@Body() payload: any) {
+    console.log('=== KCB CALLBACK START ===');
+    console.dir(payload, { depth: null });
+    console.log('=== KCB CALLBACK END ===');
+
+    return this.service.handleKcbCallback(payload);
+  }
+}

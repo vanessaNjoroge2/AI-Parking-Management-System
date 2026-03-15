@@ -65,6 +65,18 @@ export class BookingsRepository {
     });
   }
 
+  findMyBookingById(userId: string, id: string) {
+    return this.db.booking.findFirst({
+      where: { id, userId },
+      include: {
+        parkingLot: {
+          select: { id: true, name: true, addressText: true, ownerId: true },
+        },
+        payment: true,
+      },
+    });
+  }
+
   expireOldPendingBookings(cutoff: Date) {
     return this.db.booking.updateMany({
       where: {
@@ -120,6 +132,18 @@ export class BookingsRepository {
         user: { select: { id: true, fullName: true, phone: true } },
         parkingLot: { select: { id: true, name: true, addressText: true } },
         payment: true,
+      },
+    });
+  }
+  getLotWithActivePricing(parkingLotId: string) {
+    return this.db.parkingLot.findUnique({
+      where: { id: parkingLotId },
+      include: {
+        pricingRules: {
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
       },
     });
   }

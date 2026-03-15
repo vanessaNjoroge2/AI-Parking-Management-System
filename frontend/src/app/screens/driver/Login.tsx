@@ -12,31 +12,44 @@ export function Login() {
   const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  React.useEffect(() => {
-    if (getStoredAuth()) {
-      navigate('/search');
+  const redirectAuthenticatedUser = React.useCallback(() => {
+    const auth = getStoredAuth();
+    if (!auth) return false;
+
+    if (auth.user.role === 'OWNER' || auth.user.role === 'ADMIN') {
+      navigate('/owner/dashboard');
+      return true;
     }
+
+    navigate('/search');
+    return true;
   }, [navigate]);
+
+  React.useEffect(() => {
+    redirectAuthenticatedUser();
+  }, [redirectAuthenticatedUser]);
 
   const validateInputs = () => {
     if (isSignUp && !fullName.trim()) {
       setError('Full name is required');
       return false;
     }
-    if (!phone.trim()) {
-      setError('Phone number is required');
+    if (!identifier.trim()) {
+      setError(isSignUp ? 'Phone number is required' : 'Email or phone number is required');
       return false;
     }
-    const phoneRegex = /^(?:254|\+254|0)?(7|1)\d{8}$/;
-    if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
-      setError('Please enter a valid Kenyan phone number (e.g. 07XXXXXXXX)');
-      return false;
+    if (isSignUp) {
+      const phoneRegex = /^(?:254|\+254|0)?(7|1)\d{8}$/;
+      if (!phoneRegex.test(identifier.replace(/\s/g, ''))) {
+        setError('Please enter a valid Kenyan phone number (e.g. 07XXXXXXXX)');
+        return false;
+      }
     }
     if (isSignUp && email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError('Please enter a valid email address');
@@ -60,16 +73,16 @@ export function Login() {
       if (isSignUp) {
         await register({
           fullName,
-          phone,
+          phone: identifier,
           email: email || undefined,
           password,
           role: 'DRIVER',
         });
       } else {
-        await login({ phone, password });
+        await login({ identifier, password });
       }
 
-      navigate('/search');
+      redirectAuthenticatedUser();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to authenticate');
     } finally {
@@ -122,15 +135,21 @@ export function Login() {
             )}
 
             <div className="flex flex-col gap-1.5 text-left">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
+                {isSignUp ? 'Phone Number' : 'Email or Phone Number'}
+              </label>
               <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                {isSignUp ? (
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                ) : (
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                )}
                 <Input
-                  type="tel"
-                  placeholder="07XX XXX XXX"
+                  type={isSignUp ? 'tel' : 'text'}
+                  placeholder={isSignUp ? '07XX XXX XXX' : 'Enter email or 07XX XXX XXX'}
                   className="pl-11 h-12 bg-slate-50 rounded-md border-slate-200"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   required
                 />
               </div>

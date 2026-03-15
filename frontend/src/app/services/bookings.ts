@@ -21,6 +21,7 @@ export interface BookingPayment {
   currency: string;
   status: string;
   method: string;
+  reference?: string;
 }
 
 export interface BookingRecord {
@@ -37,6 +38,23 @@ export interface BookingRecord {
   payment?: BookingPayment | null;
 }
 
+export interface BookingPricingSummary {
+  parkingLotId: string;
+  parkingLotName: string;
+  pricingType: 'HOURLY' | 'DAILY' | 'FLAT';
+  unitAmount: number;
+  currency: string;
+  units: number;
+  totalAmount: number;
+  startTime: string;
+  endTime: string;
+}
+
+export interface CreateBookingResponse {
+  booking: BookingRecord;
+  pricing: BookingPricingSummary;
+}
+
 export interface CreateBookingPayload {
   parkingLotId: string;
   startTime: string;
@@ -50,9 +68,19 @@ export async function fetchMyBookings() {
   return apiFetch<BookingRecord[]>('/bookings/my');
 }
 
+export async function fetchMyBookingById(id: string) {
+  return apiFetch<BookingRecord>(`/bookings/my/${id}`);
+}
+
 export async function createBooking(payload: CreateBookingPayload) {
-  return apiFetch<BookingRecord>('/bookings', {
+  return apiFetch<CreateBookingResponse>('/bookings', {
     method: 'POST',
     body: JSON.stringify(payload),
+  });
+}
+
+export async function cancelMyBooking(id: string) {
+  return apiFetch<BookingRecord>(`/bookings/my/${id}/cancel`, {
+    method: 'PATCH',
   });
 }

@@ -17,8 +17,10 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    const normalizedPhone = this.normalizeKenyanPhone(dto.phone);
+
     // Check phone
-    const existingPhone = await this.repo.findByPhone(dto.phone);
+    const existingPhone = await this.repo.findByPhone(normalizedPhone);
     if (existingPhone) throw new ConflictException('Phone already in use');
 
     // Check email if provided
@@ -31,7 +33,7 @@ export class AuthService {
 
     const user = await this.repo.createUser({
       fullName: dto.fullName,
-      phone: dto.phone,
+      phone: normalizedPhone,
       email: dto.email ?? null,
       password: hashedPassword,
       role: dto.role, // default handled by Prisma if needed
@@ -44,7 +46,11 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.repo.findByPhone(dto.phone);
+    const identifier = dto.identifier.trim();
+    const user = this.isEmail(identifier)
+      ? await this.repo.findByEmail(identifier.toLowerCase())
+      : await this.repo.findByPhone(this.normalizeKenyanPhone(identifier));
+
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const passwordValid = await bcrypt.compare(dto.password, user.password);
@@ -64,5 +70,23 @@ export class AuthService {
       { sub: userId, role },
       { expiresIn: '1h' }, // token expiration
     );
+  }
+
+  private normalizeKenyanPhone(phone: string) {
+    const normalized = phone.replace(/\s+/g, '');
+
+    if (normalized.startsWith('+254')) {
+      return `0${normalized.slice(4)}`;
+    }
+
+    if (normalized.startsWith('254')) {
+      return `0${normalized.slice(3)}`;
+    }
+
+    return normalized;
+  }
+
+  private isEmail(value: string) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
 }

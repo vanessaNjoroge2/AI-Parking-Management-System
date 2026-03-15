@@ -23,22 +23,6 @@ export class PaymentsRepository {
       },
     });
   }
-  // ✅ correctly typed booking with nested payment and parkingLot
-  // findBooking(id: string) {
-  //   return this.db.booking.findUnique({
-  //     where: { id },
-  //     include: {
-  //       payment: true,
-  //       parkingLot: { select: { id: true, ownerId: true } },
-  //     },
-  //   }) as Promise<
-  //     | (Booking & {
-  //         payment: Payment | null;
-  //         parkingLot: { id: string; ownerId: string };
-  //       })
-  //     | null
-  //   >;
-  // }
 
   createPayment(data: {
     bookingId: string;
@@ -46,6 +30,9 @@ export class PaymentsRepository {
     amount: number;
     phone?: string | null;
     reference?: string;
+    providerRequestId?: string | null;
+    providerCheckoutId?: string | null;
+    rawPayload?: Prisma.InputJsonValue;
   }) {
     return this.db.payment.create({
       data: {
@@ -55,6 +42,9 @@ export class PaymentsRepository {
         phone: data.phone ?? null,
         status: PaymentStatus.INITIATED,
         reference: data.reference ?? `INV-${Date.now()}`,
+        providerRequestId: data.providerRequestId ?? null,
+        providerCheckoutId: data.providerCheckoutId ?? null,
+        rawPayload: data.rawPayload ?? undefined,
       },
     });
   }
@@ -193,6 +183,57 @@ export class PaymentsRepository {
                 phone: true,
               },
             },
+          },
+        },
+      },
+    });
+  }
+  async getPaymentByCheckoutId(checkoutId: string) {
+    return this.db.payment.findFirst({
+      where: { providerCheckoutId: checkoutId },
+      include: {
+        booking: {
+          include: {
+            parkingLot: true,
+          },
+        },
+      },
+    });
+  }
+  async markPaymentResultByReference(
+    reference: string,
+    status: PaymentStatus,
+    providerRef?: string | null,
+    rawPayload?: Prisma.InputJsonValue,
+  ) {
+    return this.db.$transaction(async (tx) => {
+      const payment = await tx.payment.update({
+        where: { reference },
+        data: {
+          status,
+          providerRef: providerRef ?? undefined,
+          rawPayload,
+        },
+      });
+
+      if (status === PaymentStatus.SUCCESS) {
+        await tx.booking.update({
+          where: { id: payment.bookingId },
+          data: { status: BookingStatus.CONFIRMED },
+        });
+      }
+
+      return payment;
+    });
+  }
+
+  async getPaymentByProviderRequestId(requestId: string) {
+    return this.db.payment.findFirst({
+      where: { providerRequestId: requestId },
+      include: {
+        booking: {
+          include: {
+            parkingLot: true,
           },
         },
       },

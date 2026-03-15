@@ -15,7 +15,7 @@ export interface AuthResponse {
 }
 
 export interface LoginRequest {
-  phone: string;
+  identifier: string;
   password: string;
 }
 

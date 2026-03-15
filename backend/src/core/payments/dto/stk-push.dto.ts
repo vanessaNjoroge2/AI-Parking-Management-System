@@ -1,11 +1,11 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class LoginDto {
+export class StkPushDto {
   @IsString()
   @IsNotEmpty()
-  identifier: string;
+  bookingId: string;
 
   @IsString()
   @IsNotEmpty()
-  password: string;
+  phone: string;
 }

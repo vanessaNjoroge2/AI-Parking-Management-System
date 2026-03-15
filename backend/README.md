@@ -76,6 +76,7 @@ npm run start:prod
 # Debug mode
 npm run start:debug
 ```
+
 #### Creating a Feature Branch
 
 ```bash
@@ -100,7 +101,7 @@ git commit -m "add patient registration endpoint"
 # 1. Fetch latest changes from remote
 git fetch origin
 
-# 2. Rebase your branch onto latest master
+# 2. Rebase your branch onto latest main
 git rebase origin/main
 
 # 3. If conflicts occur, resolve them and continue
@@ -123,3 +124,88 @@ git push --force-with-lease origin booking
 # 3. Create Pull Request
 # 4. After PR approval, merge will be done via rebase
 ```
+
+## Ngrok + KCB callback setup
+
+Use this when testing the live M-Pesa STK push flow from KCB against your local backend.
+
+### 1. Install ngrok
+
+If you do not already have ngrok installed, use the setup for your platform.
+
+#### macOS
+
+Install with Homebrew:
+
+```bash
+brew install ngrok/ngrok/ngrok
+```
+
+#### Windows
+
+Install with Winget:
+
+```powershell
+winget install Ngrok.Ngrok
+```
+
+Or install with Chocolatey:
+
+```powershell
+choco install ngrok
+```
+
+Then connect your local ngrok client to your ngrok account:
+
+```bash
+ngrok config add-authtoken YOUR_NGROK_AUTHTOKEN
+```
+
+You can copy the auth token from your ngrok dashboard.
+
+### 2. Start the backend
+
+This project runs on port `4367` by default.
+
+```bash
+npm run start:dev
+```
+
+### 3. Start ngrok for the backend port
+
+In a separate terminal:
+
+```bash
+ngrok http 4367
+```
+
+Copy the HTTPS forwarding URL from ngrok. It will look like:
+
+```text
+https://abc12345.ngrok-free.dev
+```
+
+### 4. Update `.env`
+
+Point `KCB_CALLBACK_URL` to the public ngrok callback route exposed by this backend:
+
+```properties
+KCB_CALLBACK_URL=https://abc12345.ngrok-free.dev/payments/callback/kcb
+```
+
+Make sure there is no leading space after `=`.
+
+### 5. Restart the backend
+
+After updating `.env`, restart the backend so the new callback URL is loaded.
+
+```bash
+npm run start:dev
+```
+
+### Notes
+
+- Opening the ngrok root URL in a browser may return `Cannot GET /`. That is expected because this backend does not define a root route.
+- The callback endpoint used by KCB is:
+   - `POST /payments/callback/kcb`
+- For KCB STK push to work end-to-end, `KCB_CALLBACK_URL` must be a real public HTTPS URL.

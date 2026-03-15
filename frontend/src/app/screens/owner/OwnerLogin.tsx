@@ -11,7 +11,7 @@ export function OwnerLogin() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,7 +25,7 @@ export function OwnerLogin() {
       if (isSignUp) {
         const response = await register({
           fullName,
-          phone,
+          phone: identifier,
           email: email || undefined,
           password,
           role: 'OWNER',
@@ -37,7 +37,7 @@ export function OwnerLogin() {
         }
         navigate('/owner/dashboard');
       } else {
-        const response = await login({ phone, password });
+        const response = await login({ identifier, password });
         if (response.user.role !== 'OWNER' && response.user.role !== 'ADMIN') {
           setError('This account does not have owner access.');
           return;
@@ -76,10 +76,10 @@ export function OwnerLogin() {
         <div className="flex-1 flex flex-col px-6 py-10 max-w-[390px] mx-auto w-full">
           <div className="text-left mb-8">
             <h2 className="text-2xl font-semibold text-slate-900 mb-2">
-              {isSignUp ? 'Facility Registration' : 'Partner Dashboard'}
+              {isSignUp ? 'Create owner account' : 'Owner sign in'}
             </h2>
             <p className="text-slate-500 text-sm">
-              {isSignUp ? 'Register your parking facility to the network' : 'Secure access for facility partners'}
+              {isSignUp ? 'Set up your account to manage parking lots and bookings.' : 'Access your parking operations dashboard.'}
             </p>
           </div>
 
@@ -91,7 +91,7 @@ export function OwnerLogin() {
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <Input
                     type="text"
-                    placeholder="Manager Name"
+                    placeholder="Full name"
                     className="pl-11 h-12 bg-slate-50 rounded-md border-slate-200"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
@@ -102,15 +102,21 @@ export function OwnerLogin() {
             )}
 
             <div className="flex flex-col gap-1.5 text-left">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Business Phone</label>
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
+                {isSignUp ? 'Business Phone' : 'Email or phone'}
+              </label>
               <div className="relative">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                {isSignUp ? (
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                ) : (
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                )}
                 <Input
-                  type="tel"
-                  placeholder="07XX XXX XXX"
+                  type={isSignUp ? 'tel' : 'text'}
+                  placeholder={isSignUp ? '07XX XXX XXX' : 'Enter email or 07XX XXX XXX'}
                   className="pl-11 h-12 bg-slate-50 rounded-md border-slate-200"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   required
                 />
               </div>
@@ -158,20 +164,20 @@ export function OwnerLogin() {
               className="h-12 rounded-md bg-blue-600 hover:bg-blue-700 text-white mt-4 font-semibold shadow-blue-600/10 shadow-lg"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Authenticating...' : isSignUp ? 'Register Facility' : 'Enter Dashboard'}
+              {isSubmitting ? 'Authenticating...' : isSignUp ? 'Create account' : 'Sign in'}
             </Button>
           </form>
 
           {/* Toggle Sign In/Up */}
           <div className="text-center mb-10">
             <span className="text-slate-500 text-sm">
-              {isSignUp ? 'Already a partner? ' : 'New parking lot manager? '}
+              {isSignUp ? 'Already have an account? ' : 'Need owner access? '}
             </span>
             <button
               onClick={() => setIsSignUp(!isSignUp)}
               className="text-blue-600 font-semibold text-sm hover:underline"
             >
-              {isSignUp ? 'Sign In' : 'Join Partner Network'}
+              {isSignUp ? 'Sign in' : 'Create an account'}
             </button>
           </div>
 
