@@ -1,49 +1,29 @@
-import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Fix for default marker icon in React-Leaflet
-import L from 'leaflet';
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
+import React, { useRef, useEffect } from 'react';
+import { APIProvider, Map, useMap } from '@vis.gl/react-google-maps';
 
 interface MapComponentProps {
     center: [number, number];
     zoom: number;
     children: React.ReactNode;
     className?: string;
-    onBoundsChanged?: (bounds: L.LatLngBounds) => void;
+    onBoundsChanged?: (bounds: any) => void; // Keep prop for compatibility, though we might not strictly need it in Google Maps
 }
 
-// Component to handle map events
-function MapEvents({ onBoundsChanged }: { onBoundsChanged?: (bounds: L.LatLngBounds) => void }) {
+// MapEvents hook equivalent for Google Maps
+function MapEvents({ onBoundsChanged }: { onBoundsChanged?: (bounds: any) => void }) {
     const map = useMap();
 
     useEffect(() => {
-        if (!map) return;
+        if (!map || !onBoundsChanged) return;
 
-        const handleMoveEnd = () => {
-            if (onBoundsChanged) {
-                onBoundsChanged(map.getBounds());
-            }
-        };
-
-        map.on('moveend', handleMoveEnd);
-
-        // Initial bounds
-        handleMoveEnd();
+        const listener = map.addListener('bounds_changed', () => {
+            onBoundsChanged(map.getBounds());
+            
+            // Clean up old instances of markers created manually by the user if any (defensive coding)
+        });
 
         return () => {
-            map.off('moveend', handleMoveEnd);
+             google.maps.event.removeListener(listener);
         };
     }, [map, onBoundsChanged]);
 
@@ -51,21 +31,24 @@ function MapEvents({ onBoundsChanged }: { onBoundsChanged?: (bounds: L.LatLngBou
 }
 
 export function MapComponent({ center, zoom, children, className, onBoundsChanged }: MapComponentProps) {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+
     return (
-        <MapContainer
-            center={center}
-            zoom={zoom}
-            scrollWheelZoom={true}
-            className={className}
-            style={{ height: '100%', width: '100%' }}
-            zoomControl={false}
-        >
-            <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            />
-            <MapEvents onBoundsChanged={onBoundsChanged} />
-            {children}
-        </MapContainer>
+        <div className={className} style={{ height: '100%', width: '100%' }}>
+            <APIProvider apiKey={apiKey}>
+                <Map
+                    defaultCenter={{ lat: center[0], lng: center[1] }}
+                    defaultZoom={zoom}
+                    gestureHandling={'greedy'}
+                    disableDefaultUI={true}
+                    mapId="fc5a7114e511dafe" // A valid Map ID is required for AdvancedMarkers
+                    style={{ width: '100%', height: '100%' }}
+                >
+                    <MapEvents onBoundsChanged={onBoundsChanged} />
+                    {children}
+                </Map>
+            </APIProvider>
+        </div>
     );
 }
+

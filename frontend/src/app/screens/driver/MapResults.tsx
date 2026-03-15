@@ -7,8 +7,7 @@ import { FilterPanel, FilterState } from '../../components/map/FilterPanel';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { StatusBadge } from '../../components/StatusBadge';
-import { CircleMarker, Marker, Tooltip, useMap } from 'react-leaflet';
-import { divIcon } from 'leaflet';
+import { AdvancedMarker } from '@vis.gl/react-google-maps';
 import {
   getPrimaryPricing,
   normalizeParkingLot,
@@ -27,17 +26,6 @@ const getImageUrl = (photo?: ParkingPhoto) => {
 };
 
 const defaultCenter: [number, number] = [-1.2896, 36.8151];
-
-function MapController({ center }: { center: [number, number] | null }) {
-  const map = useMap();
-  useEffect(() => {
-    if (center) {
-      map.flyTo(center, 14, { duration: 1.5 });
-    }
-  }, [center, map]);
-  return null;
-}
-
 export function MapResults() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -135,16 +123,6 @@ export function MapResults() {
     }
   }, [location.state?.coords, location.state?.destination]);
 
-  const userLocationIcon = useMemo(
-    () =>
-      divIcon({
-        className: 'user-location-marker',
-        html: '<span class="user-location-dot"></span>',
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
-      }),
-    [],
-  );
 
   const getLotType = (lot: ParkingLot) => (lot.isCovered ? 'covered' : 'surface');
   const getLotAccess = (lot: ParkingLot) => (lot.isActive ? 'public' : 'private');
@@ -335,15 +313,10 @@ export function MapResults() {
           className="h-full w-full z-0"
           onBoundsChanged={() => { }}
         >
-          <MapController center={mapCenter} />
           {userLocation && (
-            <>
-              <Marker position={userLocation} icon={userLocationIcon}>
-                <Tooltip direction="top" offset={[0, -10]} opacity={1}>
-                  You are here
-                </Tooltip>
-              </Marker>
-            </>
+            <AdvancedMarker position={{ lat: userLocation[0], lng: userLocation[1] }}>
+              <div className="w-5 h-5 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse" title="You are here" />
+            </AdvancedMarker>
           )}
           {visibleLots.map((lot) => {
             const pricing = getPrimaryPricing(lot);
@@ -364,6 +337,8 @@ export function MapResults() {
                 hasEvCharging={lot.hasEvCharging || false}
                 wheelchairFriendly={lot.wheelchairFriendly || false}
                 allowedVehicleSizes={lot.allowedVehicleSizes}
+                totalSpaces={lot.capacityTotal}
+                availableSpaces={lot.isActive ? lot.capacityTotal - Math.floor(lot.capacityTotal * 0.4) : 0}
               />
             );
           })}

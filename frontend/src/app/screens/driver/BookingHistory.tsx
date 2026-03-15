@@ -9,6 +9,10 @@ import { format } from 'date-fns';
 export function BookingHistory() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('all');
+  const [parkingFilter, setParkingFilter] = useState('');
+  const [timeFilter, setTimeFilter] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -72,25 +76,69 @@ export function BookingHistory() {
             <ArrowLeft className="w-5 h-5 text-slate-600" />
           </button>
           <div className="text-left">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900">My Bookings</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900">Bookings</h2>
             <p className="text-sm font-medium text-slate-500">History of your parking reservations</p>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex gap-2">
-          {(['all', 'upcoming', 'past'] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setFilter(t)}
-              className={`px-5 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition-all border ${filter === t
-                ? 'bg-slate-900 text-white border-slate-900 shadow-md'
-                : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
-                }`}
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-2">
+            {(['all', 'upcoming', 'past'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setFilter(t)}
+                className={`px-5 py-2 rounded-lg text-sm font-bold uppercase tracking-wider transition-all border ${filter === t
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-md'
+                  : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                  }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+          
+          <div className="flex flex-wrap gap-3">
+            <select 
+              value={parkingFilter} 
+              onChange={(e) => setParkingFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
-              {t}
-            </button>
-          ))}
+              <option value="">All Parking</option>
+              <option value="downtown">Downtown Plaza</option>
+              <option value="airport">Airport Terminal</option>
+              <option value="westlands">Westlands Square</option>
+            </select>
+            
+            <select 
+              value={timeFilter} 
+              onChange={(e) => setTimeFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="">Any Time</option>
+              <option value="morning">Morning</option>
+              <option value="afternoon">Afternoon</option>
+              <option value="evening">Evening</option>
+            </select>
+            
+            <select 
+              value={paymentFilter} 
+              onChange={(e) => setPaymentFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="">All Payments</option>
+              <option value="mpesa">M-Pesa</option>
+              <option value="card">Card</option>
+              <option value="cash">Cash</option>
+            </select>
+            
+            <input 
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+          </div>
         </div>
       </div>
 

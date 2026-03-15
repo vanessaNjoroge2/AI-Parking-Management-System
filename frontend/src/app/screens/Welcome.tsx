@@ -45,7 +45,7 @@ export function Welcome() {
   return (
     <div className="bg-background">
       {/* Hero Section */}
-      <section className="bg-slate-900 pt-32 pb-20 px-6 text-white overflow-hidden relative">
+      <section className="bg-slate-900 pt-24 pb-12 px-6 text-white overflow-hidden relative">
         {/* Subtle background pattern/texture can be added here */}
         <div className="absolute top-0 right-0 w-1/2 h-full bg-blue-600/10 skew-x-12 translate-x-1/4 -z-0"></div>
 
@@ -96,7 +96,7 @@ export function Welcome() {
       </section>
 
       {/* Flows Section */}
-      <section className="py-24 bg-white px-6">
+      <section className="py-12 bg-white px-6">
         <div className="max-w-7xl mx-auto w-full">
           <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
             <div className="max-w-xl">
@@ -140,7 +140,7 @@ export function Welcome() {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 bg-slate-50 border-t border-slate-200 px-6">
+      <section className="py-12 bg-slate-50 border-t border-slate-200 px-6">
         <div className="max-w-7xl mx-auto w-full">
           <div className="grid md:grid-cols-3 gap-12">
             {[

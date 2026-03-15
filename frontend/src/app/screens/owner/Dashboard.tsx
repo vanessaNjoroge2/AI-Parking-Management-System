@@ -10,13 +10,15 @@ import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { cn } from '../../components/ui/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { getStoredAuth } from '../../services/authStorage';
+import { ParkingCircle } from 'lucide-react';
 
 export function Dashboard() {
   const navigate = useNavigate();
   const [lots, setLots] = useState<ParkingLot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-
+  const auth = getStoredAuth();
   const [selectedLotId, setSelectedLotId] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name');
@@ -86,7 +88,7 @@ export function Dashboard() {
     const occupancyRate = totalLots === 0 ? 0 : Math.round((activeLots / totalLots) * 100);
 
     return [
-      { label: 'Total Lots', value: String(totalLots), icon: DollarSign, color: 'text-accent', bg: 'bg-accent/10' },
+      { label: 'Total Lots', value: String(totalLots), icon: ParkingCircle, color: 'text-accent', bg: 'bg-accent/10' },
       { label: 'Active Lots', value: String(activeLots), icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
       { label: 'Active Rate', value: `${occupancyRate}%`, icon: TrendingUp, color: 'text-warning', bg: 'bg-warning/10' },
     ];
@@ -99,8 +101,8 @@ export function Dashboard() {
       const hour = i.toString().padStart(2, '0') + ':00';
       data.push({
         hour,
-        today: 30 + Math.random() * 40,
-        yesterday: 25 + Math.random() * 45,
+        today: Math.round(30 + Math.random() * 40),
+        yesterday: Math.round(25 + Math.random() * 45),
       });
     }
     return data;
@@ -109,7 +111,7 @@ export function Dashboard() {
   const reportInsights = useMemo(() => {
     // Mocked insights for UI demonstration
     return [
-      { label: 'Avg Cars Parked', value: '42', icon: Users, trend: '+12%', color: 'text-blue-600' },
+      { label: 'Average Cars Parked', value: '42', icon: Users, trend: '+12%', color: 'text-blue-600' },
       { label: 'Peak Parking Time', value: '11:00 AM', icon: Clock, trend: 'Stable', color: 'text-purple-600' },
       { label: 'Monthly Revenue', value: 'KES 128,450', icon: DollarSign, trend: '+8.4%', color: 'text-emerald-600' },
     ];
@@ -127,7 +129,7 @@ export function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 flex items-center justify-between">
           <div className="text-left">
             <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em] mb-1">Facility Partner</p>
-            <h2 className="text-2xl font-semibold tracking-tight">John Doe</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">{auth?.user?.fullName || 'John Doe'}</h2>
           </div>
           <div className="flex gap-3">
             <Button
@@ -145,11 +147,11 @@ export function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-12">
         {/* Filters Section */}
         <div className="flex flex-col lg:flex-row items-end gap-x-4 gap-y-6 p-7 bg-white rounded-2xl border border-slate-200 shadow-sm">
-          {/* Facility Filter */}
+          {/* Parking Lot Filter */}
           <div className="flex-[1.2] w-full space-y-2 relative">
             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1.5 font-inter">
               <MapPin className="w-3 h-3" />
-              Facility Selection
+              Parking Lot
             </label>
             <Button
               variant="outline"
@@ -252,28 +254,14 @@ export function Dashboard() {
           </div>
 
           {/* Extra Filters Row Group */}
-          <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
+          <div className="grid grid-cols-1 gap-3 w-full lg:w-auto">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 font-inter">Facility Status</label>
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full lg:w-36 h-12 px-3 bg-slate-50 border border-slate-200 rounded-md text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all cursor-pointer hover:bg-slate-100"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active Only</option>
-                <option value="inactive">Inactive Only</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 font-inter">Sort By</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 font-inter">Sort By</label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="w-full lg:w-36 h-12 px-3 bg-slate-50 border border-slate-200 rounded-md text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 transition-all cursor-pointer hover:bg-slate-100"
               >
-                <option value="name">Lot Name</option>
                 <option value="occupancy">Occupancy</option>
                 <option value="yield">Gross Yield</option>
               </select>
@@ -283,7 +271,7 @@ export function Dashboard() {
           {/* Time Picker Group */}
           <div className="flex gap-3 w-full lg:w-auto">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 font-inter">Start</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 font-inter">Start</label>
               <select
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
@@ -296,7 +284,7 @@ export function Dashboard() {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 font-inter">End</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 font-inter">End</label>
               <select
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
@@ -334,20 +322,22 @@ export function Dashboard() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {reportInsights.map((insight, index) => (
-              <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-                <div className="flex items-center justify-between mb-4">
+              <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div className="flex items-center gap-3 mb-4">
                   <div className={cn("p-2 rounded-lg bg-slate-50", insight.color.replace('text-', 'bg-').replace('600', '50'))}>
                     <insight.icon className={cn("w-5 h-5", insight.color)} />
                   </div>
-                  <span className={cn(
-                    "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                    insight.trend.startsWith('+') ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-400"
-                  )}>
-                    {insight.trend}
-                  </span>
+                  <span className="text-sm font-medium text-slate-600">{insight.label}</span>
+                  <div className="ml-auto">
+                    <span className={cn(
+                      "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                      insight.trend.startsWith('+') ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-400"
+                    )}>
+                      {insight.trend}
+                    </span>
+                  </div>
                 </div>
-                <p className="text-2xl font-bold text-slate-900 mb-1">{insight.value}</p>
-                <p className="text-xs font-medium text-slate-500">{insight.label}</p>
+                <p className="text-3xl font-bold text-slate-900 mt-2">{insight.value}</p>
               </div>
             ))}
           </div>
@@ -483,36 +473,6 @@ export function Dashboard() {
 
           {/* Sidebar: Quick Actions & Notifications */}
           <div className="lg:col-span-4 space-y-8">
-            <div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-6 border-b border-slate-200 pb-2">Quick Commands</h3>
-              <div className="grid grid-cols-1 gap-4">
-                <Button
-                  onClick={() => navigate('/owner/todays-bookings')}
-                  className="h-auto py-5 rounded-lg bg-white border border-slate-200 hover:border-blue-600 hover:bg-blue-50/30 text-slate-900 flex items-center justify-start px-6 gap-5 transition-all shadow-sm group"
-                >
-                  <div className="p-3 bg-slate-100 rounded-md group-hover:bg-white shadow-sm transition-colors border border-slate-200">
-                    <CalendarIcon className="w-6 h-6 text-slate-600 group-hover:text-blue-600" />
-                  </div>
-                  <div className="text-left">
-                    <span className="block font-semibold">Live Traffic</span>
-                    <span className="text-xs text-slate-500">View check-ins & flow</span>
-                  </div>
-                </Button>
-
-                <Button
-                  onClick={() => navigate('/owner/analytics')}
-                  className="h-auto py-5 rounded-lg bg-white border border-slate-200 hover:border-blue-600 hover:bg-blue-50/30 text-slate-900 flex items-center justify-start px-6 gap-5 transition-all shadow-sm group"
-                >
-                  <div className="p-3 bg-slate-100 rounded-md group-hover:bg-white shadow-sm transition-colors border border-slate-200">
-                    <TrendingUp className="w-6 h-6 text-slate-600 group-hover:text-blue-600" />
-                  </div>
-                  <div className="text-left">
-                    <span className="block font-semibold">Yield Analytics</span>
-                    <span className="text-xs text-slate-500">Historical performance</span>
-                  </div>
-                </Button>
-              </div>
-            </div>
 
             {/* Recent activity */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">

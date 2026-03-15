@@ -31,6 +31,7 @@ export function AddEditLot() {
   const [images, setImages] = useState<string[]>(
     lot?.photos?.map((photo) => photo.url) ?? [],
   );
+  const [isActive, setIsActive] = useState(lot?.isActive ?? true);
   const [amenities, setAmenities] = useState({
     security: lot?.isGuarded ?? true,
     cctv: lot?.hasCctv ?? true,
@@ -65,6 +66,7 @@ export function AddEditLot() {
         isGuarded: amenities.security,
         hasCctv: amenities.cctv,
         isCovered: amenities.covered,
+        isActive,
       };
 
       const savedLot = isEditing && lot
@@ -298,6 +300,18 @@ export function AddEditLot() {
                     </label>
                   ))}
                 </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="text-sm font-medium text-foreground mb-3 block">Status</label>
+                <label className="flex items-center justify-between p-4 bg-secondary/30 rounded-2xl border border-border/50 cursor-pointer hover:bg-secondary/60 transition-colors">
+                  <span className="font-medium text-sm">Active / Inactive</span>
+                  <div className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  </div>
+                </label>
               </div>
 
               <Button

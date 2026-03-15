@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowLeft, Clock, Car, MapPin, ChevronRight } from 'lucide-react';
 import { StatusBadge } from '../../components/StatusBadge';
 
 export function TodaysBookings() {
   const navigate = useNavigate();
+  const [parkingFilter, setParkingFilter] = useState('');
+  const [timeFilter, setTimeFilter] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
 
   const bookings = [
     {
@@ -85,6 +89,49 @@ export function TodaysBookings() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex flex-wrap gap-3 mb-6">
+          <select 
+            value={parkingFilter} 
+            onChange={(e) => setParkingFilter(e.target.value)}
+            className="px-3 py-2 bg-white border border-slate-200 rounded-md text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+          >
+            <option value="">All Parking</option>
+            <option value="downtown">Downtown Plaza</option>
+            <option value="airport">Airport Terminal</option>
+            <option value="city">City Mall</option>
+          </select>
+          
+          <select 
+            value={timeFilter} 
+            onChange={(e) => setTimeFilter(e.target.value)}
+            className="px-3 py-2 bg-white border border-slate-200 rounded-md text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+          >
+            <option value="">Any Time</option>
+            <option value="morning">Morning</option>
+            <option value="afternoon">Afternoon</option>
+            <option value="evening">Evening</option>
+          </select>
+          
+          <select 
+            value={paymentFilter} 
+            onChange={(e) => setPaymentFilter(e.target.value)}
+            className="px-3 py-2 bg-white border border-slate-200 rounded-md text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+          >
+            <option value="">All Payments</option>
+            <option value="mpesa">M-Pesa</option>
+            <option value="card">Card</option>
+            <option value="cash">Cash</option>
+          </select>
+          
+          <input 
+            type="date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            className="px-3 py-2 bg-white border border-slate-200 rounded-md text-sm font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+          />
         </div>
 
         <div className="grid grid-cols-1 gap-4">

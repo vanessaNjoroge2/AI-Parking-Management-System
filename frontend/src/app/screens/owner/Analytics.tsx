@@ -133,30 +133,6 @@ export function Analytics() {
             </div>
           </div>
 
-          {/* Occupancy Rate */}
-          <div className="bg-white rounded-3xl p-8 shadow-sm border border-border/50">
-            <h3 className="text-lg font-semibold mb-6">Occupancy Rate by Location</h3>
-            <div className="space-y-6">
-              {[
-                { name: 'Downtown Plaza', rate: 78, color: 'bg-accent' },
-                { name: 'City Mall', rate: 64, color: 'bg-primary' },
-                { name: 'Airport Terminal', rate: 100, color: 'bg-warning' },
-              ].map((lot, index) => (
-                <div key={index}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-foreground">{lot.name}</span>
-                    <span className="font-semibold">{lot.rate}%</span>
-                  </div>
-                  <div className="h-3 bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${lot.color} rounded-full transition-all duration-1000 ease-out`}
-                      style={{ width: `${lot.rate}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>
