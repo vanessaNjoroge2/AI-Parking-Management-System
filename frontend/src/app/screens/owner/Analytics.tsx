@@ -206,8 +206,6 @@ export function Analytics() {
             </div>
           </div>
 
-<<<<<<< HEAD
-=======
           {/* Occupancy Rate */}
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-border/50">
             <h3 className="text-lg font-semibold mb-6">Occupancy Rate by Location</h3>
@@ -229,7 +227,6 @@ export function Analytics() {
               ))}
             </div>
           </div>
->>>>>>> a17c167a11f2c057d3911561214a85a4210da1c1
         </div>
       </div>
     </div>

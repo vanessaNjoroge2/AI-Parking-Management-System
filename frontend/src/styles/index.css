@@ -48,3 +48,42 @@
     transform: scale(1);
   }
 }
+
+.chatbot-markdown {
+  line-height: 1.4;
+  overflow-x: auto;
+}
+
+.chatbot-markdown table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.chatbot-markdown th,
+.chatbot-markdown td {
+  border: 1px solid #e2e8f0;
+  padding: 4px 6px;
+  text-align: left;
+}
+
+.chatbot-markdown th {
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+.chatbot-markdown ul,
+.chatbot-markdown ol {
+  padding-left: 1rem;
+  margin: 0.25rem 0;
+}
+
+.chatbot-markdown p {
+  margin: 0.25rem 0;
+}
+
+.chatbot-markdown a {
+  color: #2563eb;
+  text-decoration: underline;
+}

@@ -1,19 +1,3 @@
-<<<<<<< HEAD
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
-import { PlusCircle, TrendingUp, Users, DollarSign, MapPin, MoreVertical, BarChart3, Calendar as CalendarIcon, Filter, Download, ChevronDown, Clock } from 'lucide-react';
-import { Button } from '../../components/ui/button';
-import { StatusBadge } from '../../components/StatusBadge';
-import { getOwnerParkingLots, ParkingLot } from '../../services/parkingLots';
-import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
-import { Calendar } from '../../components/ui/calendar';
-import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
-import { DateRange } from 'react-day-picker';
-import { cn } from '../../components/ui/utils';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { getStoredAuth } from '../../services/authStorage';
-import { ParkingCircle } from 'lucide-react';
-=======
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import {
@@ -59,7 +43,6 @@ import {
 } from "../../services/ownerBookings";
 import { getStoredAuth } from "../../services/authStorage";
 import { downloadOwnerReport } from "../../services/analytics";
->>>>>>> a17c167a11f2c057d3911561214a85a4210da1c1
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -80,15 +63,6 @@ export function Dashboard() {
   const [lots, setLots] = useState<ParkingLot[]>([]);
   const [ownerBookings, setOwnerBookings] = useState<OwnerBookingRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-<<<<<<< HEAD
-  const [error, setError] = useState('');
-  const auth = getStoredAuth();
-  const [selectedLotId, setSelectedLotId] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<string>('name');
-  const [startTime, setStartTime] = useState('00:00');
-  const [endTime, setEndTime] = useState('23:59');
-=======
   const [error, setError] = useState("");
 
   const [selectedLotId, setSelectedLotId] = useState<string>("all");
@@ -96,7 +70,6 @@ export function Dashboard() {
   const [sortBy, setSortBy] = useState<string>("name");
   const [startTime, setStartTime] = useState("00:00");
   const [endTime, setEndTime] = useState("23:59");
->>>>>>> a17c167a11f2c057d3911561214a85a4210da1c1
   const [date, setDate] = React.useState<DateRange | undefined>({
     from: subDays(new Date(), 7),
     to: new Date(),
@@ -176,11 +149,6 @@ export function Dashboard() {
     );
 
     return [
-<<<<<<< HEAD
-      { label: 'Total Lots', value: String(totalLots), icon: ParkingCircle, color: 'text-accent', bg: 'bg-accent/10' },
-      { label: 'Active Lots', value: String(activeLots), icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
-      { label: 'Active Rate', value: `${occupancyRate}%`, icon: TrendingUp, color: 'text-warning', bg: 'bg-warning/10' },
-=======
       {
         label: "Total Lots",
         value: String(totalLots),
@@ -202,7 +170,6 @@ export function Dashboard() {
         color: "text-warning",
         bg: "bg-warning/10",
       },
->>>>>>> a17c167a11f2c057d3911561214a85a4210da1c1
     ];
   }, [lots, ownerBookings]);
 
@@ -258,13 +225,8 @@ export function Dashboard() {
       }).length;
       data.push({
         hour,
-<<<<<<< HEAD
-        today: Math.round(30 + Math.random() * 40),
-        yesterday: Math.round(25 + Math.random() * 45),
-=======
         today: todayCount,
         yesterday: Math.max(todayCount - 1, 0),
->>>>>>> a17c167a11f2c057d3911561214a85a4210da1c1
       });
     }
     return data;
@@ -313,11 +275,6 @@ export function Dashboard() {
       0,
     );
     return [
-<<<<<<< HEAD
-      { label: 'Average Cars Parked', value: '42', icon: Users, trend: '+12%', color: 'text-blue-600' },
-      { label: 'Peak Parking Time', value: '11:00 AM', icon: Clock, trend: 'Stable', color: 'text-purple-600' },
-      { label: 'Monthly Revenue', value: 'KES 128,450', icon: DollarSign, trend: '+8.4%', color: 'text-emerald-600' },
-=======
       {
         label: "Avg Cars Parked",
         value: String(avgCars),
@@ -339,7 +296,6 @@ export function Dashboard() {
         trend: "From recorded payments",
         color: "text-emerald-600",
       },
->>>>>>> a17c167a11f2c057d3911561214a85a4210da1c1
     ];
   }, [hourlyData, ownerBookings]);
 
@@ -356,17 +312,12 @@ export function Dashboard() {
       <div className="bg-slate-900 text-white border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 flex items-center justify-between">
           <div className="text-left">
-<<<<<<< HEAD
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em] mb-1">Facility Partner</p>
-            <h2 className="text-2xl font-semibold tracking-tight">{auth?.user?.fullName || 'John Doe'}</h2>
-=======
             <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em] mb-1">
               Owner Account
             </p>
             <h2 className="text-2xl font-semibold tracking-tight">
               {auth?.user.fullName ?? "Owner Account"}
             </h2>
->>>>>>> a17c167a11f2c057d3911561214a85a4210da1c1
           </div>
           <div className="flex gap-3">
             <Button
@@ -519,9 +470,6 @@ export function Dashboard() {
           {/* Extra Filters Row Group */}
           <div className="grid grid-cols-1 gap-3 w-full lg:w-auto">
             <div className="space-y-2">
-<<<<<<< HEAD
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 font-inter">Sort By</label>
-=======
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 font-inter">
                 Facility Status
               </label>
@@ -540,7 +488,6 @@ export function Dashboard() {
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 font-inter">
                 Sort By
               </label>
->>>>>>> a17c167a11f2c057d3911561214a85a4210da1c1
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -555,13 +502,9 @@ export function Dashboard() {
           {/* Time Picker Group */}
           <div className="flex gap-3 w-full lg:w-auto">
             <div className="space-y-2">
-<<<<<<< HEAD
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 font-inter">Start</label>
-=======
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 font-inter">
                 Start
               </label>
->>>>>>> a17c167a11f2c057d3911561214a85a4210da1c1
               <select
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
@@ -578,13 +521,9 @@ export function Dashboard() {
               </select>
             </div>
             <div className="space-y-2">
-<<<<<<< HEAD
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 font-inter">End</label>
-=======
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 font-inter">
                 End
               </label>
->>>>>>> a17c167a11f2c057d3911561214a85a4210da1c1
               <select
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
@@ -645,24 +584,6 @@ export function Dashboard() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {reportInsights.map((insight, index) => (
-<<<<<<< HEAD
-              <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={cn("p-2 rounded-lg bg-slate-50", insight.color.replace('text-', 'bg-').replace('600', '50'))}>
-                    <insight.icon className={cn("w-5 h-5", insight.color)} />
-                  </div>
-                  <span className="text-sm font-medium text-slate-600">{insight.label}</span>
-                  <div className="ml-auto">
-                    <span className={cn(
-                      "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                      insight.trend.startsWith('+') ? "bg-emerald-50 text-emerald-600" : "bg-slate-50 text-slate-400"
-                    )}>
-                      {insight.trend}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-3xl font-bold text-slate-900 mt-2">{insight.value}</p>
-=======
               <div
                 key={index}
                 className="bg-white rounded-xl p-6 shadow-sm border border-slate-200"
@@ -695,7 +616,6 @@ export function Dashboard() {
                 <p className="text-xs font-medium text-slate-500">
                   {insight.label}
                 </p>
->>>>>>> a17c167a11f2c057d3911561214a85a4210da1c1
               </div>
             ))}
           </div>
@@ -905,8 +825,6 @@ export function Dashboard() {
 
           {/* Sidebar: Quick Actions & Notifications */}
           <div className="lg:col-span-4 space-y-8">
-<<<<<<< HEAD
-=======
             <div>
               <h3 className="text-xl font-semibold text-slate-900 mb-6 border-b border-slate-200 pb-2">
                 Quick Commands
@@ -951,7 +869,6 @@ export function Dashboard() {
                 </Button>
               </div>
             </div>
->>>>>>> a17c167a11f2c057d3911561214a85a4210da1c1
 
             {/* Recent activity */}
             <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200">

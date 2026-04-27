@@ -27,21 +27,7 @@ const getImageUrl = (photo?: ParkingPhoto) => {
 };
 
 const defaultCenter: [number, number] = [-1.2896, 36.8151];
-<<<<<<< HEAD
-=======
 const LIVE_REFRESH_MS = 15000;
-
-function MapController({ center }: { center: [number, number] | null }) {
-  const map = useMap();
-  useEffect(() => {
-    if (center) {
-      map.flyTo(center, 14, { duration: 1.5 });
-    }
-  }, [center, map]);
-  return null;
-}
-
->>>>>>> a17c167a11f2c057d3911561214a85a4210da1c1
 export function MapResults() {
   const navigate = useNavigate();
   const location = useLocation();

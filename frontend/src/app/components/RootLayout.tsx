@@ -2,6 +2,7 @@ import { Outlet } from 'react-router';
 import { DevMenu } from './DevMenu';
 import { Navbar } from './Navbar';
 import { Footer } from './Footer';
+import { ChatbotWidget } from './ChatbotWidget';
 
 export function RootLayout() {
   return (
@@ -12,6 +13,7 @@ export function RootLayout() {
       </main>
       <Footer />
       <DevMenu />
+      <ChatbotWidget />
     </div>
   );
 }

@@ -22,6 +22,10 @@ Create a .env file in the root directory:
 DATABASE_URL="postgresql://Database_name:your_secure_password@localhost:5432/Parking"
 JWT_SECRET="your_super_secret_key"
 PORT=4367
+FRONTEND_URL=http://localhost:5173
+OPENROUTER_API_KEY=your_openrouter_api_key
+OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct:free
+OPENROUTER_SITE_URL=http://localhost:5173
 ```
 
 ## Database

@@ -32,6 +32,7 @@ export function Navbar() {
 
     const handleSignOut = () => {
         clearAuth();
+        window.dispatchEvent(new Event('user-logout'));
         navigate('/login');
     };
 
