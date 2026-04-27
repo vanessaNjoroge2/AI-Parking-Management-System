@@ -13,9 +13,9 @@ export interface ChatResponse {
   usage?: unknown;
 }
 
-export async function sendChatMessage(message: string, history: ChatMessage[] = []) {
+export async function sendChatMessage(message: string, history: ChatMessage[] = [], role?: string, userId?: string) {
   return apiFetch<ChatResponse>('/chat', {
     method: 'POST',
-    body: JSON.stringify({ message, history }),
+    body: JSON.stringify({ message, history, role, userId }),
   });
 }

@@ -10,6 +10,6 @@ export class ChatController {
   @Public()
   @Post()
   async createChat(@Body() body: ChatRequestDto) {
-    return this.chatService.createReply(body.message, body.history ?? []);
+    return this.chatService.createReply(body.message, body.history ?? [], body.role, body.userId);
   }
 }

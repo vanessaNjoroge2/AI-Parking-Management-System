@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { sendChatMessage, type ChatMessage } from '../services/chat';
+import { getStoredAuth } from '../services/authStorage';
 
 const MAX_HISTORY = 8;
 const INITIAL_MESSAGES: ChatMessage[] = [
@@ -44,7 +45,8 @@ export function ChatbotWidget() {
     setIsLoading(true);
 
     try {
-      const response = await sendChatMessage(text, trimmedHistory);
+      const auth = getStoredAuth();
+      const response = await sendChatMessage(text, trimmedHistory, auth?.user?.role, auth?.user?.id);
       setMessages((prev) => [...prev, { role: 'assistant', content: response.reply }]);
     } catch (error) {
       const fallback =
